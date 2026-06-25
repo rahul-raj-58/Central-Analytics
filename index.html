@@ -1,0 +1,778 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Delivery Dashboard - Complete</title>
+    <style>
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        html {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        body {
+            background: #F6F6F9;
+            color: #1C2230;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Helvetica Neue', Roboto, sans-serif;
+            line-height: 1.6;
+            font-size: 16px;
+        }
+
+        .wrap {
+            max-width: 1080px;
+            margin: 0 auto;
+            padding: 30px 16px;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #6C4BD9, #5538C9);
+            border-radius: 16px;
+            padding: 30px 24px;
+            text-align: center;
+            box-shadow: 0 8px 20px rgba(85, 56, 201, 0.2);
+            margin-bottom: 30px;
+            position: relative;
+        }
+
+        .header .htitle {
+            font-size: 32px;
+            font-weight: 800;
+            color: #fff;
+            margin: 0;
+            letter-spacing: -0.5px;
+        }
+
+        .header .hsub {
+            font-size: 14px;
+            color: #E5DEFA;
+            margin: 8px 0 0;
+            font-weight: 500;
+        }
+
+        .header .htime {
+            position: absolute;
+            top: 20px;
+            right: 24px;
+            font-size: 12px;
+            color: #CFC4F5;
+            font-weight: 600;
+        }
+
+        .verdict {
+            display: flex;
+            gap: 12px;
+            background: #FCEBEB;
+            border-left: 5px solid #D23B3A;
+            border-radius: 12px;
+            padding: 16px 18px;
+            margin: 25px 0;
+            align-items: flex-start;
+        }
+
+        .verdict .vi {
+            font-size: 20px;
+            flex: none;
+            margin-top: 2px;
+        }
+
+        .verdict .vt {
+            font-size: 13px;
+            color: #D23B3A;
+            line-height: 1.5;
+            margin: 0;
+            font-weight: 500;
+        }
+
+        .section-title {
+            font-size: 16px;
+            font-weight: 700;
+            color: #1C2230;
+            margin: 28px 0 18px 0;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #ECECF1;
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 16px;
+            margin-bottom: 28px;
+        }
+
+        @media (max-width: 768px) {
+            .grid {
+                grid-template-columns: repeat(2, 1fr);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .card {
+            background: #FFFFFF;
+            border: 1px solid #ECECF1;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 2px 6px rgba(20, 25, 40, 0.08);
+            transition: box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(20, 25, 40, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+
+        .card-icon-group {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .card-icon {
+            width: 40px;
+            height: 40px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 22px;
+        }
+
+        .card-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #1C2230;
+            margin: 0;
+        }
+
+        .card-subtitle {
+            font-size: 12px;
+            color: #9AA0AD;
+            margin: 3px 0 0 0;
+        }
+
+        .dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            display: inline-block;
+            flex: none;
+        }
+
+        .metric-value {
+            display: flex;
+            align-items: baseline;
+            gap: 10px;
+            margin: 16px 0;
+        }
+
+        .big-number {
+            font-size: 48px;
+            font-weight: 800;
+            letter-spacing: -1px;
+            line-height: 1;
+            margin: 0;
+        }
+
+        .unit {
+            font-size: 12px;
+            color: #646B7A;
+            font-weight: 600;
+        }
+
+        .card-detail {
+            font-size: 11px;
+            color: #646B7A;
+            margin-top: 8px;
+        }
+
+        .chart {
+            width: 100%;
+            height: 50px;
+            margin: 12px 0;
+            display: block;
+        }
+
+        .card-footer {
+            display: flex;
+            justify-content: space-around;
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #ECECF1;
+        }
+
+        .footer-label {
+            font-size: 10px;
+            color: #9AA0AD;
+            text-transform: uppercase;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+        }
+
+        .footer-value {
+            font-size: 14px;
+            font-weight: 700;
+            color: #1C2230;
+            margin-top: 4px;
+        }
+
+        .badge {
+            display: inline-block;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 8px;
+            border-radius: 6px;
+            margin-top: 8px;
+        }
+
+        .badge.green {
+            background: #E4F4EC;
+            color: #16895C;
+        }
+
+        .badge.orange {
+            background: #FBF2DF;
+            color: #C07C12;
+        }
+
+        .badge.red {
+            background: #FCEBEB;
+            color: #D23B3A;
+        }
+
+        .metric-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 11px;
+            margin-top: 12px;
+        }
+
+        .metric-table th,
+        .metric-table td {
+            padding: 8px 6px;
+            text-align: right;
+            border-top: 1px solid #ECECF1;
+        }
+
+        .metric-table th:first-child,
+        .metric-table td:first-child {
+            text-align: left;
+        }
+
+        .metric-table th {
+            font-size: 10px;
+            font-weight: 600;
+            color: #9AA0AD;
+            background: #F8FAFC;
+        }
+
+        .issues-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .issue-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-top: 1px solid #ECECF1;
+            font-size: 11px;
+        }
+
+        .issue-item:first-child {
+            border-top: none;
+            padding-top: 0;
+        }
+
+        .issue-num {
+            font-weight: 700;
+            width: 20px;
+            color: #1C2230;
+        }
+
+        .issue-name {
+            flex: 1;
+            color: #646B7A;
+            margin: 0 8px;
+        }
+
+        .issue-value {
+            font-weight: 700;
+            text-align: right;
+            color: #1C2230;
+        }
+
+        .footer {
+            margin-top: 35px;
+            padding-top: 18px;
+            border-top: 1px solid #ECECF1;
+            text-align: center;
+            font-size: 11px;
+            color: #9AA0AD;
+        }
+
+        .metric-badges {
+            display: flex;
+            gap: 12px;
+            margin: 12px 0;
+        }
+
+        .metric-badges-item {
+            flex: 1;
+        }
+
+        .metric-badges-label {
+            font-size: 11px;
+            color: #9AA0AD;
+            display: block;
+            margin-bottom: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="wrap">
+        <!-- HEADER -->
+        <div class="header">
+            <div class="htime">06:29 PM IST</div>
+            <div class="htitle">Delivery Dashboard</div>
+            <div class="hsub">25 Jun 2026 • Full Resolution Report</div>
+        </div>
+
+        <!-- ALERT -->
+        <div class="verdict">
+            <span class="vi">⚠️</span>
+            <div class="vt">
+                <b>Health Status: AT RISK</b> | Video (62%) and 360 (61%) breaching SLA targets. Images (19%) stable.
+            </div>
+        </div>
+
+        <!-- SECTION 1: SLA BREACH RATE -->
+        <div class="section-title">1️⃣ SLA Breach Rate - MTD Performance</div>
+        <div class="grid">
+            <!-- Images Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #EEEAFB;">📷</div>
+                        <div>
+                            <div class="card-title">Images</div>
+                            <div class="card-subtitle">SLA Breach Rate</div>
+                        </div>
+                    </div>
+                    <span class="dot" style="background: #C07C12;"></span>
+                </div>
+                <div class="metric-value">
+                    <span class="big-number" style="color: #C07C12;">19%</span>
+                    <span class="unit">MTD</span>
+                </div>
+                <svg class="chart" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+                    <polyline points="8,33 30,3 55,28 80,20 95,31" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="8" cy="33" r="1.5" fill="#4F46E5"/>
+                    <circle cx="30" cy="3" r="1.5" fill="#4F46E5"/>
+                    <circle cx="55" cy="28" r="1.5" fill="#4F46E5"/>
+                    <circle cx="80" cy="20" r="1.5" fill="#4F46E5"/>
+                    <circle cx="95" cy="31" r="1.5" fill="#4F46E5"/>
+                </svg>
+                <div class="card-footer">
+                    <div>
+                        <div class="footer-label">M-1</div>
+                        <div class="footer-value">21%</div>
+                    </div>
+                    <div>
+                        <div class="footer-label">M-2</div>
+                        <div class="footer-value">32%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 360 Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E1F3EC;">🔄</div>
+                        <div>
+                            <div class="card-title">360</div>
+                            <div class="card-subtitle">SLA Breach Rate</div>
+                        </div>
+                    </div>
+                    <span class="dot" style="background: #D23B3A;"></span>
+                </div>
+                <div class="metric-value">
+                    <span class="big-number" style="color: #D23B3A;">61%</span>
+                    <span class="unit">MTD</span>
+                </div>
+                <svg class="chart" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+                    <polyline points="8,3 30,1 55,18 80,15 95,33" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="8" cy="3" r="1.5" fill="#4F46E5"/>
+                    <circle cx="30" cy="1" r="1.5" fill="#4F46E5"/>
+                    <circle cx="55" cy="18" r="1.5" fill="#4F46E5"/>
+                    <circle cx="80" cy="15" r="1.5" fill="#4F46E5"/>
+                    <circle cx="95" cy="33" r="1.5" fill="#4F46E5"/>
+                </svg>
+                <div class="card-footer">
+                    <div>
+                        <div class="footer-label">M-1</div>
+                        <div class="footer-value">69%</div>
+                    </div>
+                    <div>
+                        <div class="footer-label">M-2</div>
+                        <div class="footer-value">70%</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Video Card -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E6F0FE;">🎥</div>
+                        <div>
+                            <div class="card-title">Video</div>
+                            <div class="card-subtitle">SLA Breach Rate</div>
+                        </div>
+                    </div>
+                    <span class="dot" style="background: #D23B3A;"></span>
+                </div>
+                <div class="metric-value">
+                    <span class="big-number" style="color: #D23B3A;">62%</span>
+                    <span class="unit">MTD</span>
+                </div>
+                <svg class="chart" viewBox="0 0 100 50" xmlns="http://www.w3.org/2000/svg">
+                    <polyline points="8,5 30,1 55,2 80,8 95,18" fill="none" stroke="#4F46E5" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="8" cy="5" r="1.5" fill="#4F46E5"/>
+                    <circle cx="30" cy="1" r="1.5" fill="#4F46E5"/>
+                    <circle cx="55" cy="2" r="1.5" fill="#4F46E5"/>
+                    <circle cx="80" cy="8" r="1.5" fill="#4F46E5"/>
+                    <circle cx="95" cy="18" r="1.5" fill="#4F46E5"/>
+                </svg>
+                <div class="card-footer">
+                    <div>
+                        <div class="footer-label">M-1</div>
+                        <div class="footer-value">64%</div>
+                    </div>
+                    <div>
+                        <div class="footer-label">M-2</div>
+                        <div class="footer-value">62%</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SECTION 2: PENDENCY -->
+        <div class="section-title">2️⃣ Pendency - VINs Pending > 6 Hours</div>
+        <div class="grid">
+            <!-- Images Pendency -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #EEEAFB;">📷</div>
+                        <div>
+                            <div class="card-title">Images</div>
+                            <div class="card-subtitle">Pendency</div>
+                        </div>
+                    </div>
+                    <span class="dot" style="background: #C07C12;"></span>
+                </div>
+                <div class="metric-value">
+                    <span class="big-number" style="color: #C07C12;">174</span>
+                    <span class="unit">VINs</span>
+                </div>
+                <div class="card-detail">VINs pending longer than 6 hours</div>
+            </div>
+
+            <!-- 360 Pendency -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E1F3EC;">🔄</div>
+                        <div>
+                            <div class="card-title">360</div>
+                            <div class="card-subtitle">Pendency</div>
+                        </div>
+                    </div>
+                    <span class="dot" style="background: #D23B3A;"></span>
+                </div>
+                <div class="metric-value">
+                    <span class="big-number" style="color: #D23B3A;">400</span>
+                    <span class="unit">VINs</span>
+                </div>
+                <div class="card-detail">VINs pending longer than 6 hours</div>
+            </div>
+
+            <!-- Video Pendency -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E6F0FE;">🎥</div>
+                        <div>
+                            <div class="card-title">Video</div>
+                            <div class="card-subtitle">Pendency</div>
+                        </div>
+                    </div>
+                    <span class="dot" style="background: #D23B3A;"></span>
+                </div>
+                <div class="metric-value">
+                    <span class="big-number" style="color: #D23B3A;">5</span>
+                    <span class="unit">VINs</span>
+                </div>
+                <div class="card-detail">VINs pending longer than 6 hours</div>
+            </div>
+        </div>
+
+        <!-- SECTION 3: P95/P99 -->
+        <div class="section-title">3️⃣ Delivery Time - P95 / P99 (Hours)</div>
+        <div class="grid">
+            <!-- Images P95/P99 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #EEEAFB;">📷</div>
+                        <div>
+                            <div class="card-title">Images</div>
+                            <div class="card-subtitle">Delivery Time</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-badges">
+                    <div class="metric-badges-item">
+                        <span class="metric-badges-label">P95</span>
+                        <span class="badge green">11h</span>
+                    </div>
+                    <div class="metric-badges-item">
+                        <span class="metric-badges-label">P99</span>
+                        <span class="badge green">21h</span>
+                    </div>
+                </div>
+                <table class="metric-table">
+                    <tr>
+                        <th>Segment</th>
+                        <th>P95</th>
+                        <th>P99</th>
+                    </tr>
+                    <tr>
+                        <td>ENT</td>
+                        <td><span class="badge green">15</span></td>
+                        <td><span class="badge red">86</span></td>
+                    </tr>
+                    <tr>
+                        <td>MID</td>
+                        <td><span class="badge green">15</span></td>
+                        <td><span class="badge orange">38</span></td>
+                    </tr>
+                    <tr>
+                        <td>SMB</td>
+                        <td><span class="badge green">14</span></td>
+                        <td><span class="badge green">21</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- 360 P95/P99 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E1F3EC;">🔄</div>
+                        <div>
+                            <div class="card-title">360</div>
+                            <div class="card-subtitle">Delivery Time</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-badges">
+                    <div class="metric-badges-item">
+                        <span class="metric-badges-label">P95</span>
+                        <span class="badge red">92h</span>
+                    </div>
+                    <div class="metric-badges-item">
+                        <span class="metric-badges-label">P99</span>
+                        <span class="badge red">158h</span>
+                    </div>
+                </div>
+                <table class="metric-table">
+                    <tr>
+                        <th>Segment</th>
+                        <th>P95</th>
+                        <th>P99</th>
+                    </tr>
+                    <tr>
+                        <td>ENT</td>
+                        <td><span class="badge red">91</span></td>
+                        <td><span class="badge red">160</span></td>
+                    </tr>
+                    <tr>
+                        <td>MID</td>
+                        <td><span class="badge red">116</span></td>
+                        <td><span class="badge red">137</span></td>
+                    </tr>
+                    <tr>
+                        <td>SMB</td>
+                        <td><span class="badge red">115</span></td>
+                        <td><span class="badge red">146</span></td>
+                    </tr>
+                </table>
+            </div>
+
+            <!-- Video P95/P99 -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E6F0FE;">🎥</div>
+                        <div>
+                            <div class="card-title">Video</div>
+                            <div class="card-subtitle">Delivery Time</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="metric-badges">
+                    <div class="metric-badges-item">
+                        <span class="metric-badges-label">P95</span>
+                        <span class="badge red">1398h</span>
+                    </div>
+                    <div class="metric-badges-item">
+                        <span class="metric-badges-label">P99</span>
+                        <span class="badge red">2040h</span>
+                    </div>
+                </div>
+                <table class="metric-table">
+                    <tr>
+                        <th>Segment</th>
+                        <th>P95</th>
+                        <th>P99</th>
+                    </tr>
+                    <tr>
+                        <td>ENT</td>
+                        <td><span class="badge red">1490</span></td>
+                        <td><span class="badge red">1544</span></td>
+                    </tr>
+                    <tr>
+                        <td>MID</td>
+                        <td><span class="badge red">643</span></td>
+                        <td><span class="badge red">1564</span></td>
+                    </tr>
+                    <tr>
+                        <td>SMB</td>
+                        <td><span class="badge red">421</span></td>
+                        <td><span class="badge red">1566</span></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+
+        <!-- SECTION 4: TOP ISSUES -->
+        <div class="section-title">4️⃣ Top Issues - By Product Line</div>
+        <div class="grid">
+            <!-- Images Issues -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #EEEAFB;">📷</div>
+                        <div>
+                            <div class="card-title">Images</div>
+                            <div class="card-subtitle">Top Issues</div>
+                        </div>
+                    </div>
+                </div>
+                <ul class="issues-list">
+                    <li class="issue-item">
+                        <span class="issue-num">1.</span>
+                        <span class="issue-name">Remove BG</span>
+                        <span class="issue-value">113K</span>
+                    </li>
+                    <li class="issue-item">
+                        <span class="issue-num">2.</span>
+                        <span class="issue-name">Tilt</span>
+                        <span class="issue-value">52K</span>
+                    </li>
+                    <li class="issue-item">
+                        <span class="issue-num">3.</span>
+                        <span class="issue-name">ROI Changes</span>
+                        <span class="issue-value">44K</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 360 Issues -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E1F3EC;">🔄</div>
+                        <div>
+                            <div class="card-title">360</div>
+                            <div class="card-subtitle">Top Issues</div>
+                        </div>
+                    </div>
+                </div>
+                <ul class="issues-list">
+                    <li class="issue-item">
+                        <span class="issue-num">1.</span>
+                        <span class="issue-name">Placement</span>
+                        <span class="issue-value">353</span>
+                    </li>
+                    <li class="issue-item">
+                        <span class="issue-num">2.</span>
+                        <span class="issue-name">Exposure</span>
+                        <span class="issue-value">125</span>
+                    </li>
+                    <li class="issue-item">
+                        <span class="issue-num">3.</span>
+                        <span class="issue-name">Tilt</span>
+                        <span class="issue-value">114</span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- Video Issues -->
+            <div class="card">
+                <div class="card-header">
+                    <div class="card-icon-group">
+                        <div class="card-icon" style="background: #E6F0FE;">🎥</div>
+                        <div>
+                            <div class="card-title">Video</div>
+                            <div class="card-subtitle">Top Issues</div>
+                        </div>
+                    </div>
+                </div>
+                <ul class="issues-list">
+                    <li class="issue-item">
+                        <span class="issue-num">1.</span>
+                        <span class="issue-name">Portrait</span>
+                        <span class="issue-value">734</span>
+                    </li>
+                    <li class="issue-item">
+                        <span class="issue-num">2.</span>
+                        <span class="issue-name">Interior Miss</span>
+                        <span class="issue-value">130</span>
+                    </li>
+                    <li class="issue-item">
+                        <span class="issue-num">3.</span>
+                        <span class="issue-name">Images Unavail</span>
+                        <span class="issue-value">46</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="footer">
+            ✓ Generated 25 Jun 2026 at 06:29 PM IST | 1080×2400 Hi-Res | All metrics from Google Sheet
+        </div>
+    </div>
+</body>
+</html>
