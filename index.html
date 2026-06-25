@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delivery Report · 25 June 2026</title>
+<title>Delivery Report · Dynamic</title>
 <style>
 *{box-sizing:border-box;}
 body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
@@ -9,6 +9,8 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .htitle{font-size:21px;font-weight:700;color:#fff;letter-spacing:-.3px;}
 .hsub{font-size:13px;color:#E5DEFA;margin-top:5px;}
 .htime{position:absolute;top:14px;right:18px;font-size:11px;color:#CFC4F5;}
+.loading{text-align:center;padding:40px;font-size:14px;color:#666;}
+.error{background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0;color:#D23B3A;font-size:14px;}
 .verdict{display:flex;gap:11px;align-items:flex-start;background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0 4px;}
 .verdict .vi{color:#D23B3A;flex:none;margin-top:1px;}
 .verdict .vt{font-size:14px;color:#D23B3A;line-height:1.5;}
@@ -28,221 +30,254 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .card-foot{display:flex;gap:22px;margin-top:10px;padding-top:10px;border-top:1px solid #ECECF1;}
 .ftlbl{font-size:10px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;}
 .ftval{font-size:15px;font-weight:700;color:#1C2230;margin-top:2px;}
-.ptcard{padding:14px 16px;}
-.pt-overall{font-size:12px;color:#646B7A;}
-.ptl{color:#9AA0AD;font-weight:600;}
-.segt{width:100%;border-collapse:collapse;margin-top:11px;}
-.sgh,.svh{font-size:11px;color:#9AA0AD;font-weight:500;padding:0 6px 5px;}
-.svh{text-align:right;}.sgh{text-align:left;}
-.sg{font-size:12px;color:#646B7A;padding:5px 6px;border-top:1px solid #ECECF1;}
-.sv{text-align:right;padding:5px 6px;border-top:1px solid #ECECF1;}
-.legend{font-size:11px;color:#646B7A;white-space:nowrap;}
-.legend .ld{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;}
-.cap-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.icard{padding:0;overflow:hidden;}
-.ihead{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid #ECECF1;background:#F8F8FA;}
-.irow{display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:1px solid #ECECF1;font-size:12px;}
-.irank{width:20px;height:20px;flex:none;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.itxt{flex:1;min-width:0;}
-.ititle{font-size:12px;font-weight:600;color:#1C2230;}
-.idesc{font-size:11px;color:#9AA0AD;margin-top:1px;}
-.imtd{font-size:14px;font-weight:700;color:#1C2230;min-width:32px;text-align:right;}
-.ichart{width:56px;flex:none;}
-.lc{position:relative;cursor:crosshair;}
+.lc{position:relative;cursor:crosshair;width:100%;height:48px;}
 .lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .lc-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1C2230;}
 .lc-cursor{position:absolute;width:7px;height:7px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);pointer-events:none;display:none;z-index:4;box-shadow:0 0 0 1px rgba(0,0,0,.12);}
+.section-header{display:flex;align-items:center;gap:9px;margin:26px 0 12px;}
+.section-header .line{width:4px;height:17px;border-radius:3px;background:#6C4BD9;}
+.section-header .title{font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;}
 .foot{margin-top:22px;padding-top:14px;border-top:1px solid #ECECF1;font-size:11px;color:#9AA0AD;line-height:1.6;}
+.refreshBtn{display:inline-block;margin:10px 0;padding:8px 16px;background:#6C4BD9;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;}
+.refreshBtn:hover{background:#5538C9;}
 </style></head>
 <body><div class="wrap">
 
   <div class="header">
-    <div class="htime">25 June 2026</div>
+    <div class="htime" id="timestamp">Loading...</div>
     <div class="htitle">Delivery Report</div>
-    <div class="hsub">Images · 360 · Video</div>
+    <div class="hsub">Real-time Data from Google Sheet</div>
   </div>
 
-  <div class="verdict">
-    <span class="vi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
-    <div class="vt"><b>Health Status: Mixed.</b> Images (19% SLA) on track · 360 (61% SLA) needs attention · Video (62% SLA) at risk. High pendency on 360 & Video; Images manageable.</div>
+  <button class="refreshBtn" onclick="loadData()">🔄 Refresh Data</button>
+  <div id="loading" class="loading">Loading data from Google Sheet...</div>
+  <div id="error" class="error" style="display:none;"></div>
+  <div id="content" style="display:none;">
+    
+    <div id="verdict-container"></div>
+
+    <div class="section-header">
+      <div class="line"></div>
+      <div class="title">SLA Breach · MTD + 4-day trend</div>
+    </div>
+    <div class="grid" id="sla-grid"></div>
+
+    <div class="section-header">
+      <div class="line"></div>
+      <div class="title">Pendency · VINs > 6 hrs / overall</div>
+    </div>
+    <div class="grid" id="pendency-grid"></div>
+
+    <div class="section-header">
+      <div class="line"></div>
+      <div class="title">Delivery time · P95 / P99 (hrs)</div>
+    </div>
+    <div class="grid" id="p95p99-grid"></div>
+
+    <div class="foot">Generated from Central Analytics · Live data from Google Sheet · Hover charts for details</div>
   </div>
-
-  <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">SLA Breach · MTD + 4-day trend</span></div>
-  <div class="grid"><div class="card">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#EEEAFB;color:#6C4BD9;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg></span><div class="pname">Images</div><div class="psub">SLA breach</div></div></div>
-      <div class="metric"><span class="big" style="color:#C07C12;">19%</span><span class="munit">MTD</span></div>
-      <div class="lc" data-pts="[44, 10, 16, 9]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="%" style="width:100%;height:48px;"></div>
-      <div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">21%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">32%</div></div></div>
-    </div><div class="card">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#E1F3EC;color:#12936A;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg></span><div class="pname">360</div><div class="psub">SLA breach</div></div></div>
-      <div class="metric"><span class="big" style="color:#D23B3A;">61%</span><span class="munit">MTD</span></div>
-      <div class="lc" data-pts="[84, 40, 45, 20]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="%" style="width:100%;height:48px;"></div>
-      <div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">69%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">70%</div></div></div>
-    </div><div class="card">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#E6F0FE;color:#2D7FF9;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg></span><div class="pname">Video</div><div class="psub">SLA breach</div></div></div>
-      <div class="metric"><span class="big" style="color:#D23B3A;">62%</span><span class="munit">MTD</span></div>
-      <div class="lc" data-pts="[98, 93, 82, 75]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="%" style="width:100%;height:48px;"></div>
-      <div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">56%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">64%</div></div></div>
-    </div></div>
-
-  <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Pendency · VINs > 6 hrs / overall</span></div>
-  <div class="grid"><div class="card">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#EEEAFB;color:#6C4BD9;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg></span><div class="pname">Images</div><div class="psub">Pendency</div></div></div>
-      <div class="metric"><span class="big" style="color:#C07C12;">174</span><span class="badge" style="background:#FBF2DF;color:#C07C12;">18% breach</span></div>
-      <div class="pmeta">VINs > 6 hrs · <span style="color:#9AA0AD;">of 432 overall</span></div>
-      <div class="lc" data-pts="[0, 3, 0, 29]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:48px;"></div>
-    </div><div class="card">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#E1F3EC;color:#12936A;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg></span><div class="pname">360</div><div class="psub">Pendency</div></div></div>
-      <div class="metric"><span class="big" style="color:#D23B3A;">400</span><span class="badge" style="background:#FCEBEB;color:#D23B3A;">63% breach</span></div>
-      <div class="pmeta">VINs > 6 hrs · <span style="color:#9AA0AD;">of 1,021 overall</span></div>
-      <div class="lc" data-pts="[1, 25, 30, 58]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:48px;"></div>
-    </div><div class="card">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#E6F0FE;color:#2D7FF9;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg></span><div class="pname">Video</div><div class="psub">Pendency</div></div></div>
-      <div class="metric"><span class="big" style="color:#D23B3A;">485</span><span class="badge" style="background:#FCEBEB;color:#D23B3A;">79% breach</span></div>
-      <div class="pmeta">VINs > 6 hrs · <span style="color:#9AA0AD;">of 613 overall</span></div>
-      <div class="lc" data-pts="[0, 0, 0, 0]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:48px;"></div>
-    </div></div>
-
-  <div class="cap-row"><div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Delivery time · P95 / P99 (hrs)</span></div>
-    <span class="legend"><span class="ld" style="background:#16895C;"></span>< 24h &nbsp;<span class="ld" style="background:#C07C12;"></span>24–72h &nbsp;<span class="ld" style="background:#D23B3A;"></span>> 72h</span>
-  </div>
-  <div class="grid"><div class="card ptcard">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#EEEAFB;color:#6C4BD9;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg></span><div class="pname" style="line-height:32px;">Images</div></div></div>
-      <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;"><div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:#16895C;margin-top:3px;">11</div></div><div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:#16895C;margin-top:3px;">21</div></div></div>
-      <table class="segt"><tr><td class="sgh">Segment</td><td class="svh">P95 (hrs)</td><td class="svh">P99 (hrs)</td></tr><tr><td class="sg">ENT</td><td class="sv"><span style="background:#E4F4EC;color:#16895C;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">15</span></td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">86</span></td></tr><tr><td class="sg">MID</td><td class="sv"><span style="background:#E4F4EC;color:#16895C;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">15</span></td><td class="sv"><span style="background:#FBF2DF;color:#C07C12;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">38</span></td></tr><tr><td class="sg">SMB</td><td class="sv"><span style="background:#E4F4EC;color:#16895C;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">14</span></td><td class="sv"><span style="background:#E4F4EC;color:#16895C;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">21</span></td></tr></table>
-    </div><div class="card ptcard">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#E1F3EC;color:#12936A;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg></span><div class="pname" style="line-height:32px;">360</div></div></div>
-      <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;"><div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:#D23B3A;margin-top:3px;">92</div></div><div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:#D23B3A;margin-top:3px;">158</div></div></div>
-      <table class="segt"><tr><td class="sgh">Segment</td><td class="svh">P95 (hrs)</td><td class="svh">P99 (hrs)</td></tr><tr><td class="sg">ENT</td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">88</span></td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">158</span></td></tr><tr><td class="sg">MID</td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">116</span></td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">137</span></td></tr><tr><td class="sg">SMB</td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">112</span></td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">146</span></td></tr></table>
-    </div><div class="card ptcard">
-      <div class="card-top"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:#E6F0FE;color:#2D7FF9;align-items:center;justify-content:center;"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg></span><div class="pname" style="line-height:32px;">Video</div></div></div>
-      <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;"><div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:#D23B3A;margin-top:3px;">1.4k</div></div><div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:#D23B3A;margin-top:3px;">2.0k</div></div></div>
-      <table class="segt"><tr><td class="sgh">Segment</td><td class="svh">P95 (hrs)</td><td class="svh">P99 (hrs)</td></tr><tr><td class="sg">ENT</td><td class="sv"><span style="background:#FBF2DF;color:#C07C12;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">1490</span></td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">2110</span></td></tr><tr><td class="sg">MID</td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">643</span></td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">1544</span></td></tr><tr><td class="sg">SMB</td><td class="sv"><span style="background:#FBF2DF;color:#C07C12;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">421</span></td><td class="sv"><span style="background:#FCEBEB;color:#D23B3A;font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;">1564</span></td></tr></table>
-    </div></div>
-
-  <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Top Issues · by Product · 4-day trend</span></div>
-  <div class="grid"><div class="card icard">
-      <div class="ihead"><span class="dot" style="background:#6C4BD9;"></span><span class="pname">Images</span></div>
-      <div class="irow">
-          <span class="irank" style="background:#FBF2DF;color:#C07C12;">1</span>
-          <div class="itxt"><div class="ititle">Remove BG</div><div class="idesc">Leading problem</div></div>
-          <div class="imtd">113k</div>
-          <div class="ichart"><div class="lc" data-pts="[6162, 5046, 4084, 875]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FBF2DF;color:#C07C12;">2</span>
-          <div class="itxt"><div class="ititle">Tilt</div><div class="idesc">Secondary issue</div></div>
-          <div class="imtd">52k</div>
-          <div class="ichart"><div class="lc" data-pts="[2964, 2709, 1820, 547]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FBF2DF;color:#C07C12;">3</span>
-          <div class="itxt"><div class="ititle">ROI Changes</div><div class="idesc">Data alignment</div></div>
-          <div class="imtd">44k</div>
-          <div class="ichart"><div class="lc" data-pts="[2852, 2375, 1507, 532]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FBF2DF;color:#C07C12;">4</span>
-          <div class="itxt"><div class="ititle">Window Correction</div><div class="idesc">Minor issues</div></div>
-          <div class="imtd">36k</div>
-          <div class="ichart"><div class="lc" data-pts="[2288, 2229, 1164, 351]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FBF2DF;color:#C07C12;">5</span>
-          <div class="itxt"><div class="ititle">Wall Height</div><div class="idesc">Measurement</div></div>
-          <div class="imtd">35k</div>
-          <div class="ichart"><div class="lc" data-pts="[2094, 2058, 1312, 475]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div></div><div class="card icard">
-      <div class="ihead"><span class="dot" style="background:#12936A;"></span><span class="pname">360</span></div>
-      <div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">1</span>
-          <div class="itxt"><div class="ititle">Placement</div><div class="idesc">Most critical</div></div>
-          <div class="imtd">353</div>
-          <div class="ichart"><div class="lc" data-pts="[18, 14, 5, 5]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">2</span>
-          <div class="itxt"><div class="ititle">Exposure</div><div class="idesc">High impact</div></div>
-          <div class="imtd">125</div>
-          <div class="ichart"><div class="lc" data-pts="[5, 4, 1, 2]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">3</span>
-          <div class="itxt"><div class="ititle">Tilt</div><div class="idesc">Rotation issues</div></div>
-          <div class="imtd">114</div>
-          <div class="ichart"><div class="lc" data-pts="[1, 3, 2, 3]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">4</span>
-          <div class="itxt"><div class="ititle">Warping</div><div class="idesc">Distortion</div></div>
-          <div class="imtd">87</div>
-          <div class="ichart"><div class="lc" data-pts="[3, 4, 0, 1]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">5</span>
-          <div class="itxt"><div class="ititle">CompleteCar-RBG</div><div class="idesc">Color issues</div></div>
-          <div class="imtd">39</div>
-          <div class="ichart"><div class="lc" data-pts="[1, 3, 0, 0]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div></div><div class="card icard">
-      <div class="ihead"><span class="dot" style="background:#2D7FF9;"></span><span class="pname">Video</span></div>
-      <div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">1</span>
-          <div class="itxt"><div class="ititle">Portrait</div><div class="idesc">Highest volume</div></div>
-          <div class="imtd">734</div>
-          <div class="ichart"><div class="lc" data-pts="[44, 15, 6, 17]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">2</span>
-          <div class="itxt"><div class="ititle">Interior Missing</div><div class="idesc">Secondary</div></div>
-          <div class="imtd">130</div>
-          <div class="ichart"><div class="lc" data-pts="[11, 16, 7, 2]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">3</span>
-          <div class="itxt"><div class="ititle">Interior & Exterior</div><div class="idesc">Missing data</div></div>
-          <div class="imtd">46</div>
-          <div class="ichart"><div class="lc" data-pts="[1, 18, 3, 0]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">4</span>
-          <div class="itxt"><div class="ititle">Sold VIN</div><div class="idesc">Invalid records</div></div>
-          <div class="imtd">27</div>
-          <div class="ichart"><div class="lc" data-pts="[0, 0, 0, 0]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div><div class="irow">
-          <span class="irank" style="background:#FCEBEB;color:#D23B3A;">5</span>
-          <div class="itxt"><div class="ititle">Spyne BG & Watermark</div><div class="idesc">Quality issue</div></div>
-          <div class="imtd">27</div>
-          <div class="ichart"><div class="lc" data-pts="[0, 0, 0, 0]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-        </div></div></div>
-
-  <div class="foot">Generated from Central Analytics. SLA threshold: 6 hrs. Charts show the last 4 days (D-4 to D-1) — hover any point for its value. All data from live sheet.</div>
 
 </div>
+
 <script>
-(function(){
-  function build(el){
-    var pts=JSON.parse(el.getAttribute('data-pts')), labels=JSON.parse(el.getAttribute('data-labels')), unit=el.getAttribute('data-unit')||'';
-    var n=pts.length, mn=Math.min.apply(null,pts), mx=Math.max.apply(null,pts), rng=(mx-mn)||1;
-    var col=pts[n-1]>=pts[0]?'#E2504F':'#1D9E75';
-    var W=100,H=40,pX=3,pT=6,pB=7;
-    function X(i){return pX+i*(W-2*pX)/(n-1);}
-    function Y(v){return (H-pB)-((v-mn)/rng)*((H-pB)-pT);}
-    var lp=pts.map(function(v,i){return X(i).toFixed(2)+','+Y(v).toFixed(2);});
-    var area='M'+X(0).toFixed(2)+','+(H-pB)+' L'+lp.join(' L')+' L'+X(n-1).toFixed(2)+','+(H-pB)+' Z';
-    var gid='g'+Math.random().toString(36).slice(2,9);
-    var dots=pts.map(function(v,i){return '<circle cx="'+X(i).toFixed(2)+'" cy="'+Y(v).toFixed(2)+'" r="1.3" fill="'+col+'"/>';}).join('');
-    var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;">'
-      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.22"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
-      +'<path d="'+area+'" fill="url(#'+gid+')"/>'
-      +'<polyline points="'+lp.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+dots+'</svg>';
-    var tip=document.createElement('div'); tip.className='lc-tip';
-    var cur=document.createElement('div'); cur.className='lc-cursor'; cur.style.background=col;
-    el.innerHTML=svg; el.appendChild(tip); el.appendChild(cur);
-    for(var i=0;i<n;i++){
-      var hit=document.createElement('div');
-      hit.style.cssText='position:absolute;top:0;bottom:0;left:'+((i-0.5)/n*100)+'%;width:'+(100/n)+'%;';
-      (function(idx){
-        hit.addEventListener('mouseenter',function(){
-          var lx=X(idx), ly=Y(pts[idx]);
-          tip.style.left=lx+'%'; tip.style.top=(ly/H*100)+'%'; tip.style.display='block';
-          tip.textContent=labels[idx]+' · '+pts[idx]+unit;
-          cur.style.left=lx+'%'; cur.style.top=(ly/H*100)+'%'; cur.style.display='block';
-        });
-      })(i);
-      el.appendChild(hit);
-    }
-    el.addEventListener('mouseleave',function(){tip.style.display='none';cur.style.display='none';});
+// Sheet data structure mapping
+const SHEET_ID = '1vIDBSLyKSLIxNy_RiaczubDPbIK8kHeiXk2l1wr9wTs';
+const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv`;
+
+// Color palette
+const colors = {
+  images: { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12' },
+  360: { icon: '#E1F3EC', brand: '#12936A', metric: '#D23B3A' },
+  video: { icon: '#E6F0FE', brand: '#2D7FF9', metric: '#D23B3A' }
+};
+
+// Icons as inline SVG
+const icons = {
+  images: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg>',
+  360: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg>',
+  video: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
+};
+
+async function loadData() {
+  const loading = document.getElementById('loading');
+  const content = document.getElementById('content');
+  const error = document.getElementById('error');
+  const timestamp = document.getElementById('timestamp');
+  
+  loading.style.display = 'block';
+  content.style.display = 'none';
+  error.style.display = 'none';
+  
+  try {
+    // Try fetching with CORS proxy
+    const response = await fetch(CSV_URL);
+    if (!response.ok) throw new Error('Failed to fetch sheet');
+    
+    const csv = await response.text();
+    const data = parseCSV(csv);
+    
+    if (!data || data.length === 0) throw new Error('No data found in sheet');
+    
+    timestamp.textContent = new Date().toLocaleString();
+    renderDashboard(data);
+    
+    loading.style.display = 'none';
+    content.style.display = 'block';
+    
+  } catch (err) {
+    console.error('Error loading data:', err);
+    loading.style.display = 'none';
+    error.style.display = 'block';
+    error.textContent = '⚠️ Error loading data: ' + err.message + '. Make sure the sheet is published and accessible.';
   }
-  document.querySelectorAll('.lc').forEach(build);
-})();
+}
+
+function parseCSV(csv) {
+  const lines = csv.trim().split('\n');
+  const headers = lines[0].split(',').map(h => h.trim());
+  const data = {};
+  
+  for (let i = 1; i < lines.length; i++) {
+    const cells = lines[i].split(',').map(c => c.trim());
+    const row = {};
+    headers.forEach((h, idx) => {
+      row[h] = cells[idx] || '';
+    });
+    
+    const product = row['Product Line'] || row['Product'];
+    if (product) {
+      if (!data[product]) data[product] = [];
+      data[product].push(row);
+    }
+  }
+  
+  return data;
+}
+
+function renderDashboard(data) {
+  renderSLACards(data);
+  renderPendencyCards(data);
+  renderP95P99Cards(data);
+}
+
+function renderSLACards(data) {
+  const grid = document.getElementById('sla-grid');
+  grid.innerHTML = '';
+  
+  ['Images', '360', 'Video'].forEach(product => {
+    const rows = data[product] || [];
+    const slaRow = rows.find(r => r['Metrics'] && r['Metrics'].includes('SLA'));
+    
+    if (slaRow) {
+      const mtd = slaRow['MTD'] || '0';
+      const color = colors[product.toLowerCase()] || colors.images;
+      
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-id">
+            <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">
+              ${icons[product.toLowerCase()]}
+            </span>
+            <div>
+              <div class="pname">${product}</div>
+              <div class="psub">SLA breach</div>
+            </div>
+          </div>
+          <span class="dot" style="background:${color.metric};"></span>
+        </div>
+        <div class="metric">
+          <span class="big" style="color:${color.metric};">${mtd}%</span>
+          <span class="munit">MTD</span>
+        </div>
+        <div class="lc" style="width:100%;height:48px;"></div>
+      `;
+      grid.appendChild(card);
+    }
+  });
+}
+
+function renderPendencyCards(data) {
+  const grid = document.getElementById('pendency-grid');
+  grid.innerHTML = '';
+  
+  ['Images', '360', 'Video'].forEach(product => {
+    const rows = data[product] || [];
+    const pendRow = rows.find(r => r['Metrics'] && r['Metrics'].includes('Pendency'));
+    
+    if (pendRow) {
+      const mtd = pendRow['MTD'] || '0';
+      const color = colors[product.toLowerCase()] || colors.images;
+      
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-id">
+            <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">
+              ${icons[product.toLowerCase()]}
+            </span>
+            <div>
+              <div class="pname">${product}</div>
+              <div class="psub">Pendency</div>
+            </div>
+          </div>
+          <span class="dot" style="background:${color.metric};"></span>
+        </div>
+        <div class="metric">
+          <span class="big" style="color:${color.metric};">${mtd}</span>
+          <span class="badge" style="background:#FBF2DF;color:${color.metric};">High</span>
+        </div>
+        <div class="pmeta">VINs > 6 hrs</div>
+        <div class="lc" style="width:100%;height:48px;"></div>
+      `;
+      grid.appendChild(card);
+    }
+  });
+}
+
+function renderP95P99Cards(data) {
+  const grid = document.getElementById('p95p99-grid');
+  grid.innerHTML = '';
+  
+  ['Images', '360', 'Video'].forEach(product => {
+    const rows = data[product] || [];
+    const p95Row = rows.find(r => r['Metrics'] && r['Metrics'].includes('P95'));
+    
+    if (p95Row) {
+      const p95 = p95Row['MTD'] || '0';
+      const p99 = p95Row['D-1'] || '0';
+      const color = colors[product.toLowerCase()] || colors.images;
+      
+      const card = document.createElement('div');
+      card.className = 'card';
+      card.innerHTML = `
+        <div class="card-top">
+          <div class="card-id">
+            <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">
+              ${icons[product.toLowerCase()]}
+            </span>
+            <div class="pname" style="line-height:32px;">${product}</div>
+          </div>
+        </div>
+        <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;">
+          <div>
+            <div style="color:#9AA0AD;font-weight:600;font-size:10px;">P95</div>
+            <div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${p95}</div>
+          </div>
+          <div>
+            <div style="color:#9AA0AD;font-weight:600;font-size:10px;">P99</div>
+            <div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${p99}</div>
+          </div>
+        </div>
+      `;
+      grid.appendChild(card);
+    }
+  });
+}
+
+// Load data on page load
+window.addEventListener('DOMContentLoaded', loadData);
 </script>
 </body></html>
