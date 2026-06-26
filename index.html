@@ -14,6 +14,9 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .loading{text-align:center;padding:40px;font-size:14px;color:#666;}
 .error{background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0;color:#D23B3A;font-size:12px;}
 .success{background:#E4F4EC;border-left:4px solid #16895C;border-radius:12px;padding:8px 12px;margin:10px 0;color:#16895C;font-size:11px;}
+.verdict{display:flex;gap:11px;align-items:flex-start;background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0 4px;}
+.verdict .vi{color:#D23B3A;flex:none;margin-top:1px;}
+.verdict .vt{font-size:14px;color:#D23B3A;line-height:1.5;}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 @media(max-width:600px){.grid{grid-template-columns:1fr;}}
 .card{background:#FFFFFF;border:1px solid #ECECF1;border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(20,25,40,.04),0 6px 18px rgba(20,25,40,.03);}
@@ -30,6 +33,22 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .card-foot{display:flex;gap:22px;margin-top:10px;padding-top:10px;border-top:1px solid #ECECF1;}
 .ftlbl{font-size:10px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;}
 .ftval{font-size:15px;font-weight:700;color:#1C2230;margin-top:2px;}
+.ptcard{padding:14px 16px;}
+.ptl{color:#9AA0AD;font-weight:600;}
+.segt{width:100%;border-collapse:collapse;margin-top:11px;}
+.sgh,.svh{font-size:11px;color:#9AA0AD;font-weight:500;padding:0 6px 5px;}
+.svh{text-align:right;}.sgh{text-align:left;}
+.sg{font-size:12px;color:#646B7A;padding:5px 6px;border-top:1px solid #ECECF1;}
+.sv{text-align:right;padding:5px 6px;border-top:1px solid #ECECF1;}
+.icard{padding:0;overflow:hidden;}
+.ihead{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid #ECECF1;background:#F8F8FA;}
+.irow{display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:1px solid #ECECF1;font-size:12px;}
+.irank{width:20px;height:20px;flex:none;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.itxt{flex:1;min-width:0;}
+.ititle{font-size:12px;font-weight:600;color:#1C2230;}
+.idesc{font-size:11px;color:#9AA0AD;margin-top:1px;}
+.imtd{font-size:14px;font-weight:700;color:#1C2230;min-width:32px;text-align:right;}
+.ichart{width:56px;flex:none;}
 .lc{position:relative;cursor:crosshair;}
 .lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .lc-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1C2230;}
@@ -59,6 +78,8 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
   <div id="loading" class="loading" style="display:none;">Loading data from Google Sheet...</div>
   <div id="content" style="display:none;">
     
+    <div id="verdict-container"></div>
+
     <div class="section-header">
       <div class="line"></div>
       <div class="title">SLA Breach · MTD + 4-day trend</div>
@@ -77,6 +98,12 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     </div>
     <div class="grid" id="p95p99-grid"></div>
 
+    <div class="section-header">
+      <div class="line"></div>
+      <div class="title">Top Issues · by Product · 4-day trend</div>
+    </div>
+    <div class="grid" id="issues-grid"></div>
+
     <div class="foot">Live data from Google Sheet · Updated: <span id="update-time">--</span> · Click timestamp to refresh</div>
   </div>
 
@@ -86,12 +113,11 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 const SHEET_ID = '2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG';
 const GID = '2034010422';
 const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
-const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
 
 const colors = {
-  'Images': { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#C07C12' },
-  '360': { icon: '#E1F3EC', brand: '#12936A', metric: '#D23B3A', dot: '#D23B3A' },
-  'Video': { icon: '#E6F0FE', brand: '#2D7FF9', metric: '#D23B3A', dot: '#D23B3A' }
+  'Images': { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#6C4BD9' },
+  '360': { icon: '#E1F3EC', brand: '#12936A', metric: '#D23B3A', dot: '#12936A' },
+  'Video': { icon: '#E6F0FE', brand: '#2D7FF9', metric: '#D23B3A', dot: '#2D7FF9' }
 };
 
 const icons = {
@@ -184,6 +210,7 @@ function renderDashboard(data) {
   renderSLACards(data);
   renderPendencyCards(data);
   renderP95P99Cards(data);
+  renderIssuesCards(data);
 }
 
 function renderSLACards(data) {
@@ -271,11 +298,14 @@ function renderP95P99Cards(data) {
     if (!p95Key) return;
     
     const p95 = metrics[p95Key];
-    const mtd = p95.MTD || 0;
+    const p99Key = Object.keys(metrics).find(m => m.includes('P99'));
+    const p99 = metrics[p99Key] || p95;
+    const mtd95 = p95.MTD || 0;
+    const mtd99 = p99.MTD || 0;
     const color = colors[product];
     
     const card = document.createElement('div');
-    card.className = 'card';
+    card.className = 'card ptcard';
     card.innerHTML = `
       <div class="card-top">
         <div class="card-id">
@@ -286,12 +316,61 @@ function renderP95P99Cards(data) {
         </div>
       </div>
       <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;">
-        <div><div style="color:#9AA0AD;font-weight:600;font-size:10px;">P95</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(mtd)}</div></div>
-        <div><div style="color:#9AA0AD;font-weight:600;font-size:10px;">P99</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">--</div></div>
+        <div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(mtd95)}</div></div>
+        <div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(mtd99)}</div></div>
       </div>
     `;
     grid.appendChild(card);
   });
+}
+
+function renderIssuesCards(data) {
+  const grid = document.getElementById('issues-grid');
+  grid.innerHTML = '';
+  
+  const issueProducts = ['Images', '360', 'Video'];
+  issueProducts.forEach(product => {
+    const metrics = data[product];
+    if (!metrics) return;
+    
+    const color = colors[product];
+    const card = document.createElement('div');
+    card.className = 'card icard';
+    
+    let issueRows = '';
+    let issueCount = 0;
+    
+    Object.keys(metrics).forEach(metricKey => {
+      if (metricKey.includes('Issue') || metricKey.includes('Top') || metricKey.includes('Problem')) {
+        const issue = metrics[metricKey];
+        issueCount++;
+        const rankColor = product === 'Images' ? '#C07C12' : '#D23B3A';
+        const rankBg = product === 'Images' ? '#FBF2DF' : '#FCEBEB';
+        
+        issueRows += `
+          <div class="irow">
+            <span class="irank" style="background:${rankBg};color:${rankColor};">${issueCount}</span>
+            <div class="itxt"><div class="ititle">${metricKey}</div><div class="idesc">Issue</div></div>
+            <div class="imtd">${Math.round(issue.MTD)}</div>
+            <div class="ichart"><div class="lc" data-pts="[${issue.D4},${issue.D3},${issue.D2},${issue.D1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
+          </div>
+        `;
+      }
+    });
+    
+    if (issueCount === 0) {
+      issueRows = `<div class="irow" style="padding:20px 15px;text-align:center;color:#9AA0AD;">No issues data available</div>`;
+    }
+    
+    card.innerHTML = `
+      <div class="ihead"><span class="dot" style="background:${color.dot};"></span><span class="pname">${product}</span></div>
+      ${issueRows}
+    `;
+    
+    grid.appendChild(card);
+  });
+  
+  initCharts();
 }
 
 function initCharts() {
