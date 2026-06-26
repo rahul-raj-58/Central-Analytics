@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delivery Dashboard - Live Dynamic</title>
+<title>Delivery Dashboard - Cached Dynamic</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
@@ -59,6 +59,7 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .legend{font-size:11px;color:#646B7A;white-space:nowrap;}
 .legend .ld{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;}
 .error-banner{background:#FEE2E2;border:1px solid #FECACA;color:#DC2626;padding:12px 16px;border-radius:8px;margin:16px 0;font-size:13px;display:none;}
+.cache-indicator{position:absolute;bottom:8px;left:18px;font-size:9px;color:#CFC4F5;}
 </style></head>
 <body><div class="wrap">
 
@@ -66,7 +67,8 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div class="htime" id="dateTime">—</div>
     <div class="htitle">Delivery Dashboard</div>
     <div class="hsub">Images · 360 · Video</div>
-    <div class="refresh-info" id="refreshInfo">Live • Auto-refresh in 5 min</div>
+    <div class="cache-indicator" id="cacheIndicator">Cached</div>
+    <div class="refresh-info" id="refreshInfo">Next refresh in 6h</div>
   </div>
 
   <div id="errorBanner" class="error-banner"></div>
@@ -87,20 +89,25 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Top Issues · by Product · 4-day trend</span></div>
     <div class="grid" id="issuesGrid"></div>
 
-    <div class="foot">Generated from Central Analytics. <strong>Live data from Google Sheets</strong> • Last updated: <span id="lastUpdate">—</span> • Auto-refreshes every 5 minutes.</div>
+    <div class="foot">Generated from Central Analytics. <strong>Cached data</strong> • Last updated: <span id="lastUpdate">—</span> • Next refresh: <span id="nextRefresh">in 6 hours</span></div>
   </div>
 
   <div id="loadingContainer" class="loading">
     <div class="loading-spinner">
       <div class="spinner"></div>
       <p style="margin:0;color:#1C2230;font-weight:600;">Loading Dashboard</p>
-      <p id="loadingStatus" style="margin:8px 0 0;font-size:12px;color:#64748B;">Fetching live data from Google Sheets...</p>
+      <p id="loadingStatus" style="margin:8px 0 0;font-size:12px;color:#64748B;">Preparing data...</p>
     </div>
   </div>
 </div>
 
 <script>
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/gviz/tq?tqx=out:json&headers=1&gid=2034010422';
+// CSV export URL from Google Sheets (more reliable than gviz API)
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/pub?gid=2034010422&single=true&output=csv';
+
+const CACHE_KEY = 'delivery_dashboard_cache';
+const CACHE_TIME_KEY = 'delivery_dashboard_cache_time';
+const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
 
 const COLORS = {
   Images: { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#6C4BD9' },
@@ -115,73 +122,101 @@ const ICONS = {
 };
 
 let sheetData = {};
-let refreshTimer = null;
 
 async function loadDashboard() {
   const loadingContainer = document.getElementById('loadingContainer');
   const contentContainer = document.getElementById('contentContainer');
   const loadingStatus = document.getElementById('loadingStatus');
-  
-  loadingContainer.style.display = 'flex';
-  contentContainer.style.display = 'none';
+  const cacheIndicator = document.getElementById('cacheIndicator');
   
   try {
-    loadingStatus.textContent = 'Fetching data from Delivery sheet...';
-    sheetData = await fetchSheetData();
+    // Check if cached data exists and is fresh
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+    const now = Date.now();
+    
+    if (cachedData && cachedTime && (now - parseInt(cachedTime)) < CACHE_DURATION) {
+      loadingStatus.textContent = 'Loading from cache...';
+      sheetData = JSON.parse(cachedData);
+      cacheIndicator.textContent = 'Cached';
+      cacheIndicator.style.color = '#CFC4F5';
+    } else {
+      loadingStatus.textContent = 'Fetching fresh data from Google Sheets...';
+      cacheIndicator.textContent = 'Updating...';
+      cacheIndicator.style.color = '#FFD700';
+      sheetData = await fetchSheetData();
+      localStorage.setItem(CACHE_KEY, JSON.stringify(sheetData));
+      localStorage.setItem(CACHE_TIME_KEY, now.toString());
+      cacheIndicator.textContent = 'Updated';
+      cacheIndicator.style.color = '#10B981';
+    }
     
     loadingStatus.textContent = 'Rendering dashboard...';
     buildDashboard();
     updateDateTime();
     buildCharts();
+    updateRefreshTimer();
     
     contentContainer.style.display = 'block';
     loadingContainer.style.display = 'none';
-    setupAutoRefresh();
     
   } catch (error) {
     console.error('Error:', error);
     const errorBanner = document.getElementById('errorBanner');
-    errorBanner.textContent = `Error loading dashboard: ${error.message}. Retrying in 30 seconds...`;
+    errorBanner.textContent = `Error: ${error.message}. Using cached data...`;
     errorBanner.style.display = 'block';
-    setTimeout(loadDashboard, 30000);
+    
+    // Try to load from cache anyway
+    const cachedData = localStorage.getItem(CACHE_KEY);
+    if (cachedData) {
+      sheetData = JSON.parse(cachedData);
+      buildDashboard();
+      updateDateTime();
+      buildCharts();
+      updateRefreshTimer();
+      document.getElementById('contentContainer').style.display = 'block';
+      document.getElementById('loadingContainer').style.display = 'none';
+      cacheIndicator.textContent = 'Offline (Cached)';
+    } else {
+      loadingStatus.textContent = 'Error loading data. No cached data available.';
+    }
   }
 }
 
 async function fetchSheetData() {
-  const url = SHEET_URL + '&t=' + Date.now();
-  const response = await fetch(url);
-  
+  const response = await fetch(SHEET_URL);
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   
-  const text = await response.text();
-  const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-  const json = JSON.parse(jsonString);
-  
+  const csv = await response.text();
+  const lines = csv.trim().split('\n');
   const data = {};
-  if (!json.table || !json.table.rows) throw new Error('Invalid sheet format');
   
-  const cols = json.table.cols.map(c => c.label || '');
-  const rows = json.table.rows;
+  let currentProduct = '';
   
-  rows.forEach(row => {
-    const cells = row.c.map(c => c ? c.v : null);
-    const metric = cells[0];
-    if (!metric) return;
+  for (let i = 1; i < lines.length; i++) {
+    const cells = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+    const product = cells[0];
+    const metric = cells[1];
     
-    data[metric] = {};
-    cols.slice(1).forEach((col, i) => {
-      const val = cells[i + 1];
-      data[metric][col] = val ? (typeof val === 'number' ? val : parseFloat(val) || 0) : 0;
+    if (product) currentProduct = product;
+    if (!metric) continue;
+    
+    if (!data[metric]) data[metric] = {};
+    
+    const headers = ['Target', 'MTD', 'ENT', 'MID', 'SMB', 'D-1', 'D-2', 'D-3', 'D-4', 'D-5', 'M-1', 'M-2'];
+    headers.forEach((header, idx) => {
+      const val = cells[idx + 2];
+      const key = `${currentProduct} ${header}`;
+      data[metric][key] = val ? (isNaN(val) ? val : parseFloat(val)) : 0;
     });
-  });
+  }
   
   return data;
 }
 
 function val(metric, product, column) {
-  const products = { 'Images': 'Images', '360': '360', 'Video': 'Video' };
-  const colName = `${products[product]} ${column}`;
-  return sheetData[metric]?.[colName] ?? 0;
+  const key = `${product} ${column}`;
+  return sheetData[metric]?.[key] ?? 0;
 }
 
 function buildDashboard() {
@@ -193,11 +228,11 @@ function buildDashboard() {
 }
 
 function buildVerdict() {
-  const slaImages = val('SLA Breach %', 'Images', 'MTD');
-  const sla360 = val('SLA Breach %', '360', 'MTD');
-  const slaVideo = val('SLA Breach %', 'Video', 'MTD');
+  const slaImages = val('SLA Breach % (>6 Hrs)', 'Images', 'MTD');
+  const sla360 = val('SLA Breach%', '360', 'MTD');
+  const slaVideo = val('SLA Breach%', 'Video', 'MTD');
   
-  const msg = `Images (${Math.round(slaImages)}% SLA) on track · 360 (${Math.round(sla360)}% SLA) needs attention · Video (${Math.round(slaVideo)}% SLA) at risk. High pendency on 360 & Video; Images manageable.`;
+  const msg = `Images (${Math.round(slaImages)}% SLA) on track · 360 (${Math.round(sla360)}% SLA) needs attention · Video (${Math.round(slaVideo)}% SLA) at risk.`;
   
   document.getElementById('verdict').innerHTML = `
     <div class="verdict">
@@ -208,13 +243,14 @@ function buildVerdict() {
 
 function buildSLA() {
   const html = ['Images', '360', 'Video'].map(product => {
-    const mtd = val('SLA Breach %', product, 'MTD');
-    const d1 = val('SLA Breach %', product, 'D-1');
-    const d2 = val('SLA Breach %', product, 'D-2');
-    const d3 = val('SLA Breach %', product, 'D-3');
-    const d4 = val('SLA Breach %', product, 'D-4');
-    const m1 = val('SLA Breach %', product, 'M-1');
-    const m2 = val('SLA Breach %', product, 'M-2');
+    const metricName = product === 'Images' ? 'SLA Breach % (>6 Hrs)' : 'SLA Breach%';
+    const mtd = val(metricName, product, 'MTD');
+    const d1 = val(metricName, product, 'D-1');
+    const d2 = val(metricName, product, 'D-2');
+    const d3 = val(metricName, product, 'D-3');
+    const d4 = val(metricName, product, 'D-4');
+    const m1 = val(metricName, product, 'M-1');
+    const m2 = val(metricName, product, 'M-2');
     const color = COLORS[product];
     const icon = ICONS[product];
     
@@ -255,14 +291,14 @@ function buildPendency() {
 
 function buildP95P99() {
   const html = ['Images', '360', 'Video'].map(product => {
-    const p95 = val('P95', product, 'MTD');
-    const p99 = val('P99', product, 'MTD');
-    const ent_p95 = val('P95', product, 'ENT');
-    const ent_p99 = val('P99', product, 'ENT');
-    const mid_p95 = val('P95', product, 'MID');
-    const mid_p99 = val('P99', product, 'MID');
-    const smb_p95 = val('P95', product, 'SMB');
-    const smb_p99 = val('P99', product, 'SMB');
+    const p95 = val('P95 Delivery Time(Hrs)', product, 'MTD');
+    const p99 = val('P99 Delivery Time(Hrs)', product, 'MTD');
+    const ent_p95 = val('P95 Delivery Time(Hrs)', product, 'ENT');
+    const ent_p99 = val('P99 Delivery Time(Hrs)', product, 'ENT');
+    const mid_p95 = val('P95 Delivery Time(Hrs)', product, 'MID');
+    const mid_p99 = val('P99 Delivery Time(Hrs)', product, 'MID');
+    const smb_p95 = val('P95 Delivery Time(Hrs)', product, 'SMB');
+    const smb_p99 = val('P99 Delivery Time(Hrs)', product, 'SMB');
     const color = COLORS[product];
     const icon = ICONS[product];
     
@@ -293,27 +329,28 @@ function buildP95P99() {
 function buildIssues() {
   const html = ['Images', '360', 'Video'].map(product => {
     const color = COLORS[product];
+    const issueMetrics = Object.keys(sheetData).filter(m => 
+      m.includes('Remove BG') || m.includes('Tilt') || m.includes('Placement') || 
+      m.includes('Exposure') || m.includes('Portrait') || m.includes('Interior') ||
+      m.includes('roi_changes') || m.includes('Window') || m.includes('Wall') ||
+      m.includes('Warping') || m.includes('CompleteCar') || m.includes('Data Missing') ||
+      m.includes('Spyne')
+    );
+    
     const issues = [];
-    
-    // Find all metrics that are Top Issues (not standard KPIs)
-    const standardMetrics = ['SLA Breach %', 'Pendency', 'P95', 'P99'];
-    const standardColumns = ['MTD', 'D-1', 'D-2', 'D-3', 'D-4', 'M-1', 'M-2', 'ENT', 'MID', 'SMB', 'Target'];
-    
-    for (let [metric, cols] of Object.entries(sheetData)) {
-      if (standardMetrics.includes(metric)) continue;
-      
-      const mtd = cols[`${product} MTD`];
+    issueMetrics.forEach(metric => {
+      const mtd = sheetData[metric][`${product} MTD`];
       if (mtd && mtd > 0) {
         issues.push({
           name: metric,
           mtd: mtd > 1000 ? (mtd / 1000).toFixed(0) + 'k' : Math.round(mtd),
-          d1: cols[`${product} D-1`] || 0,
-          d2: cols[`${product} D-2`] || 0,
-          d3: cols[`${product} D-3`] || 0,
-          d4: cols[`${product} D-4`] || 0
+          d1: sheetData[metric][`${product} D-1`] || 0,
+          d2: sheetData[metric][`${product} D-2`] || 0,
+          d3: sheetData[metric][`${product} D-3`] || 0,
+          d4: sheetData[metric][`${product} D-4`] || 0
         });
       }
-    }
+    });
     
     issues.sort((a, b) => (parseFloat(b.mtd) || 0) - (parseFloat(a.mtd) || 0));
     const topIssues = issues.slice(0, 5);
@@ -402,22 +439,33 @@ function updateDateTime() {
   document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
 }
 
-function setupAutoRefresh() {
-  let countdown = 300;
-  const updateTimer = setInterval(() => {
-    countdown--;
-    const mins = Math.floor(countdown / 60);
-    const secs = countdown % 60;
-    document.getElementById('refreshInfo').textContent = `Live • Auto-refresh in ${mins}:${secs.toString().padStart(2, '0')}`;
-    if (countdown <= 0) {
-      clearInterval(updateTimer);
+function updateRefreshTimer() {
+  const cachedTime = localStorage.getItem(CACHE_TIME_KEY);
+  if (!cachedTime) return;
+  
+  const nextRefresh = parseInt(cachedTime) + CACHE_DURATION;
+  const now = Date.now();
+  const timeLeft = nextRefresh - now;
+  
+  if (timeLeft > 0) {
+    const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+    const mins = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+    document.getElementById('nextRefresh').textContent = `in ${hours}h ${mins}m`;
+  }
+  
+  // Check for refresh every minute
+  setInterval(() => {
+    const timeLeft = nextRefresh - Date.now();
+    if (timeLeft <= 0) {
       loadDashboard();
+    } else {
+      const hours = Math.floor(timeLeft / (60 * 60 * 1000));
+      const mins = Math.floor((timeLeft % (60 * 60 * 1000)) / (60 * 1000));
+      document.getElementById('nextRefresh').textContent = `in ${hours}h ${mins}m`;
     }
-  }, 1000);
-  refreshTimer = updateTimer;
+  }, 60000);
 }
 
 document.addEventListener('DOMContentLoaded', loadDashboard);
-window.addEventListener('beforeunload', () => { if (refreshTimer) clearInterval(refreshTimer); });
 </script>
 </body></html>
