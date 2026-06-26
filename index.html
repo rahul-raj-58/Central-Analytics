@@ -110,9 +110,12 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 </div>
 
 <script>
-const SHEET_ID = '2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG';
+const SHEET_KEY = '2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG';
 const GID = '2034010422';
-const CSV_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/export?format=csv&gid=${GID}`;
+// For published sheets with /d/e/ URLs
+const CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/export?format=csv&gid=${GID}`;
+const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
+const ALT_CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/export?format=csv`;
 
 const colors = {
   'Images': { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#6C4BD9' },
@@ -138,20 +141,53 @@ async function refreshData() {
   status.innerHTML = '';
   
   try {
-    console.log('Fetching from:', CSV_URL);
-    const response = await fetch(CSV_URL);
+    console.log('Attempting to fetch from:', CSV_URL);
+    let response;
+    let csv;
     
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    // Try direct fetch first
+    try {
+      response = await fetch(CSV_URL);
+      if (response.ok) {
+        csv = await response.text();
+      } else {
+        throw new Error(`Direct fetch failed with status ${response.status}`);
+      }
+    } catch (err1) {
+      console.log('Direct fetch failed, trying alternative:', err1.message);
+      // Try alternative URL without gid parameter
+      try {
+        response = await fetch(ALT_CSV_URL);
+        if (response.ok) {
+          csv = await response.text();
+        } else {
+          throw new Error(`Alternative URL failed with status ${response.status}`);
+        }
+      } catch (err2) {
+        console.log('Alternative URL also failed:', err2.message);
+        // Try with CORS proxy
+        try {
+          response = await fetch(CORS_PROXY + CSV_URL);
+          if (response.ok) {
+            csv = await response.text();
+          } else {
+            throw new Error(`CORS proxy failed with status ${response.status}`);
+          }
+        } catch (err3) {
+          console.log('CORS proxy also failed:', err3.message);
+          throw new Error('All fetch methods failed. Please check if the sheet is published.');
+        }
+      }
+    }
     
-    const csv = await response.text();
-    console.log('CSV length:', csv.length);
+    console.log('CSV received, length:', csv.length);
     
-    if (!csv || csv.length < 50) throw new Error('Sheet appears empty');
+    if (!csv || csv.length < 50) throw new Error('Sheet appears empty or is not accessible');
     
     const data = parseCSV(csv);
     console.log('Parsed data:', data);
     
-    if (Object.keys(data).length === 0) throw new Error('No valid metrics found');
+    if (Object.keys(data).length === 0) throw new Error('No valid metrics found in sheet');
     
     renderDashboard(data);
     const now = new Date();
@@ -160,13 +196,13 @@ async function refreshData() {
     
     loading.style.display = 'none';
     content.style.display = 'block';
-    status.innerHTML = '<div class="success">✓ Data loaded successfully!</div>';
+    status.innerHTML = '<div class="success">✓ Data loaded successfully from Google Sheet!</div>';
     timestamp.classList.remove('loading');
     
   } catch (err) {
     console.error('Error:', err);
     loading.style.display = 'none';
-    status.innerHTML = '<div class="error">⚠️ Error: ' + err.message + '<br>Make sure the Google Sheet is published and accessible.</div>';
+    status.innerHTML = `<div class="error"><b>⚠️ Error loading data:</b><br>${err.message}<br><br><b>Fix:</b> Make sure your Google Sheet is published:<br>1. Open the sheet<br>2. Click "Share" → "Publish to web"<br>3. Choose "Comma-separated values (.csv)" format<br>4. Click "Publish"</div>`;
     timestamp.classList.remove('loading');
   }
 }
