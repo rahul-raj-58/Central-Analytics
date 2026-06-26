@@ -109,24 +109,43 @@ const ICONS = {
 let data = {};
 
 function parseCSVAdvanced(line) {
+  // Handle CSV with proper quote handling and comma support in quoted strings
   const result = [];
   let current = '';
   let inQuotes = false;
   
   for (let i = 0; i < line.length; i++) {
     const char = line[i];
+    const nextChar = line[i + 1];
     
     if (char === '"') {
-      inQuotes = !inQuotes;
+      // Check for escaped quote
+      if (inQuotes && nextChar === '"') {
+        current += '"';
+        i++; // Skip next quote
+      } else {
+        // Toggle quote mode
+        inQuotes = !inQuotes;
+      }
     } else if (char === ',' && !inQuotes) {
+      // End of field
       result.push(current.trim());
       current = '';
     } else {
       current += char;
     }
   }
+  
+  // Add last field
   result.push(current.trim());
-  return result.map(c => c.replace(/^"|"$/g, ''));
+  
+  // Remove outer quotes from values
+  return result.map(c => {
+    if (c.startsWith('"') && c.endsWith('"')) {
+      return c.slice(1, -1);
+    }
+    return c;
+  });
 }
 
 function parseNumber(val) {
@@ -185,18 +204,50 @@ async function fetchData() {
   let product = '';
   
   for (let i = 1; i < lines.length; i++) {
-    const cells = parseCSVAdvanced(lines[i]);
-    if (!cells[1]) continue;
+    const rawCells = parseCSVAdvanced(lines[i]);
+    if (!rawCells[1]) continue;
     
-    if (cells[0]) product = cells[0].trim();
-    const metric = cells[1].trim();
+    if (rawCells[0]) product = rawCells[0].trim();
+    const metric = rawCells[1].trim();
     if (!product) continue;
+    
+    // KEY FIX: Merge split numbers.
+    // e.g. Google Sheets exports 1,405 without quotes → raw CSV has ...,...,1,405,...
+    // This causes the cell array to be longer than expected and shifts all columns.
+    // We detect adjacent pure-digit cells where left < 1000 and right is exactly 3 digits
+    // and merge them back as "left * 1000 + right" e.g. [1, 405] → 1405
+    const cells = [rawCells[0], rawCells[1]]; // keep product + metric as-is
+    const valueCells = rawCells.slice(2);
+    const mergedValues = [];
+    
+    for (let k = 0; k < valueCells.length; k++) {
+      const cur = valueCells[k];
+      const nxt = valueCells[k + 1];
+      
+      // Check if this looks like the thousands part and next is the hundreds part
+      const curClean = (cur || '').trim().replace(/%/g, '');
+      const nxtClean = (nxt || '').trim().replace(/%/g, '');
+      
+      if (
+        /^\d{1,3}$/.test(curClean) &&
+        /^\d{3}$/.test(nxtClean) &&
+        parseInt(curClean) > 0
+      ) {
+        // Merge: "1" + "405" → 1405
+        mergedValues.push(curClean + nxtClean);
+        k++; // Skip next cell since we consumed it
+      } else {
+        mergedValues.push(cur);
+      }
+    }
+    
+    const allCells = cells.concat(mergedValues);
     
     const cols = ['Target','MTD','ENT','MID','SMB','D-1','D-2','D-3','D-4','D-5','M-1','M-2'];
     const vals = {};
     
     for (let j = 0; j < cols.length; j++) {
-      vals[cols[j]] = parseNumber(cells[2 + j]);
+      vals[cols[j]] = parseNumber(allCells[2 + j]);
     }
     
     if (metric.includes('SLA')) {
