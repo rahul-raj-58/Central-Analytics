@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
 <title>Delivery Report · Live</title>
+<script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
 <style>
 *{box-sizing:border-box;}
 body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
@@ -12,11 +13,8 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .htime.loading{animation:pulse 1s infinite;}
 @keyframes pulse{0%,100%{opacity:1;}50%{opacity:0.6;}}
 .loading{text-align:center;padding:40px;font-size:14px;color:#666;}
-.error{background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0;color:#D23B3A;font-size:12px;}
+.error{background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0;color:#D23B3A;font-size:12px;line-height:1.6;}
 .success{background:#E4F4EC;border-left:4px solid #16895C;border-radius:12px;padding:8px 12px;margin:10px 0;color:#16895C;font-size:11px;}
-.verdict{display:flex;gap:11px;align-items:flex-start;background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0 4px;}
-.verdict .vi{color:#D23B3A;flex:none;margin-top:1px;}
-.verdict .vt{font-size:14px;color:#D23B3A;line-height:1.5;}
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 @media(max-width:600px){.grid{grid-template-columns:1fr;}}
 .card{background:#FFFFFF;border:1px solid #ECECF1;border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(20,25,40,.04),0 6px 18px rgba(20,25,40,.03);}
@@ -28,28 +26,8 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .metric{display:flex;align-items:baseline;gap:8px;margin:12px 0 2px;}
 .big{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;}
 .munit{font-size:11px;color:#646B7A;font-weight:600;}
-.badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;}
 .pmeta{font-size:11px;color:#646B7A;margin-top:3px;}
-.card-foot{display:flex;gap:22px;margin-top:10px;padding-top:10px;border-top:1px solid #ECECF1;}
-.ftlbl{font-size:10px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;}
-.ftval{font-size:15px;font-weight:700;color:#1C2230;margin-top:2px;}
-.ptcard{padding:14px 16px;}
-.ptl{color:#9AA0AD;font-weight:600;}
-.segt{width:100%;border-collapse:collapse;margin-top:11px;}
-.sgh,.svh{font-size:11px;color:#9AA0AD;font-weight:500;padding:0 6px 5px;}
-.svh{text-align:right;}.sgh{text-align:left;}
-.sg{font-size:12px;color:#646B7A;padding:5px 6px;border-top:1px solid #ECECF1;}
-.sv{text-align:right;padding:5px 6px;border-top:1px solid #ECECF1;}
-.icard{padding:0;overflow:hidden;}
-.ihead{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid #ECECF1;background:#F8F8FA;}
-.irow{display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:1px solid #ECECF1;font-size:12px;}
-.irank{width:20px;height:20px;flex:none;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
-.itxt{flex:1;min-width:0;}
-.ititle{font-size:12px;font-weight:600;color:#1C2230;}
-.idesc{font-size:11px;color:#9AA0AD;margin-top:1px;}
-.imtd{font-size:14px;font-weight:700;color:#1C2230;min-width:32px;text-align:right;}
-.ichart{width:56px;flex:none;}
-.lc{position:relative;cursor:crosshair;}
+.lc{position:relative;cursor:crosshair;width:100%;height:48px;}
 .lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .lc-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1C2230;}
 .lc-cursor{position:absolute;width:7px;height:7px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);pointer-events:none;display:none;z-index:4;box-shadow:0 0 0 1px rgba(0,0,0,.12);}
@@ -61,16 +39,24 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .btn{padding:8px 16px;background:#6C4BD9;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:12px;font-weight:600;transition:all 0.2s;}
 .btn:hover{background:#5538C9;}
 .btn:disabled{background:#ccc;cursor:not-allowed;}
+.input-group{margin:15px 0;display:flex;gap:10px;}
+.input-group input{flex:1;padding:10px;border:1px solid #ECECF1;border-radius:8px;font-size:12px;}
 </style></head>
 <body><div class="wrap">
 
   <div class="header">
-    <div class="htime" id="timestamp" title="Click to refresh">Loading...</div>
+    <div class="htime" id="timestamp" title="Click to refresh">Ready</div>
     <div class="htitle">Delivery Report</div>
     <div class="hsub">Live Data from Google Sheet</div>
   </div>
 
   <div id="status"></div>
+  
+  <div class="input-group">
+    <input type="text" id="sheetUrl" placeholder="Paste your Google Sheet URL here..." value="https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/pubhtml?gid=2034010422">
+    <button class="btn" onclick="loadFromUrl()">Load</button>
+  </div>
+
   <div class="controls">
     <button class="btn" onclick="refreshData()">🔄 Refresh Now</button>
   </div>
@@ -78,17 +64,15 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
   <div id="loading" class="loading" style="display:none;">Loading data from Google Sheet...</div>
   <div id="content" style="display:none;">
     
-    <div id="verdict-container"></div>
-
     <div class="section-header">
       <div class="line"></div>
-      <div class="title">SLA Breach · MTD + 4-day trend</div>
+      <div class="title">SLA Breach · MTD</div>
     </div>
     <div class="grid" id="sla-grid"></div>
 
     <div class="section-header">
       <div class="line"></div>
-      <div class="title">Pendency · VINs > 6 hrs / overall</div>
+      <div class="title">Pendency · VINs > 6 hrs</div>
     </div>
     <div class="grid" id="pendency-grid"></div>
 
@@ -98,25 +82,12 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     </div>
     <div class="grid" id="p95p99-grid"></div>
 
-    <div class="section-header">
-      <div class="line"></div>
-      <div class="title">Top Issues · by Product · 4-day trend</div>
-    </div>
-    <div class="grid" id="issues-grid"></div>
-
     <div class="foot">Live data from Google Sheet · Updated: <span id="update-time">--</span> · Click timestamp to refresh</div>
   </div>
 
 </div>
 
 <script>
-const SHEET_KEY = '2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG';
-const GID = '2034010422';
-// For published sheets with /d/e/ URLs
-const CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/export?format=csv&gid=${GID}`;
-const CORS_PROXY = 'https://cors-anywhere.herokuapp.com/';
-const ALT_CSV_URL = `https://docs.google.com/spreadsheets/d/e/${SHEET_KEY}/export?format=csv`;
-
 const colors = {
   'Images': { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#6C4BD9' },
   '360': { icon: '#E1F3EC', brand: '#12936A', metric: '#D23B3A', dot: '#12936A' },
@@ -129,7 +100,38 @@ const icons = {
   'Video': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
 };
 
+let currentSpreadsheetId = null;
+
+function extractSpreadsheetId(url) {
+  // Extract ID from various Google Sheets URL formats
+  let match = url.match(/\/spreadsheets\/d\/([a-zA-Z0-9-_]+)/);
+  if (match) return match[1];
+  
+  match = url.match(/\/d\/e\/([a-zA-Z0-9-_]+)/);
+  if (match) return match[1];
+  
+  return null;
+}
+
+function loadFromUrl() {
+  const url = document.getElementById('sheetUrl').value.trim();
+  const id = extractSpreadsheetId(url);
+  
+  if (!id) {
+    document.getElementById('status').innerHTML = '<div class="error">Invalid Google Sheets URL. Please paste a valid URL.</div>';
+    return;
+  }
+  
+  currentSpreadsheetId = id;
+  refreshData();
+}
+
 async function refreshData() {
+  if (!currentSpreadsheetId) {
+    document.getElementById('status').innerHTML = '<div class="error">No spreadsheet selected. Please paste a URL above and click Load.</div>';
+    return;
+  }
+
   const loading = document.getElementById('loading');
   const content = document.getElementById('content');
   const status = document.getElementById('status');
@@ -141,55 +143,46 @@ async function refreshData() {
   status.innerHTML = '';
   
   try {
-    console.log('Attempting to fetch from:', CSV_URL);
-    let response;
-    let csv;
+    // Use Google Visualization API Query Language
+    const query = new google.visualization.Query(
+      `https://docs.google.com/spreadsheets/d/${currentSpreadsheetId}/gviz/tq?headers=1`
+    );
     
-    // Try direct fetch first
-    try {
-      response = await fetch(CSV_URL);
-      if (response.ok) {
-        csv = await response.text();
-      } else {
-        throw new Error(`Direct fetch failed with status ${response.status}`);
-      }
-    } catch (err1) {
-      console.log('Direct fetch failed, trying alternative:', err1.message);
-      // Try alternative URL without gid parameter
-      try {
-        response = await fetch(ALT_CSV_URL);
-        if (response.ok) {
-          csv = await response.text();
-        } else {
-          throw new Error(`Alternative URL failed with status ${response.status}`);
-        }
-      } catch (err2) {
-        console.log('Alternative URL also failed:', err2.message);
-        // Try with CORS proxy
-        try {
-          response = await fetch(CORS_PROXY + CSV_URL);
-          if (response.ok) {
-            csv = await response.text();
-          } else {
-            throw new Error(`CORS proxy failed with status ${response.status}`);
-          }
-        } catch (err3) {
-          console.log('CORS proxy also failed:', err3.message);
-          throw new Error('All fetch methods failed. Please check if the sheet is published.');
-        }
-      }
+    query.setQuery('SELECT *');
+    query.send(handleQueryResponse);
+    
+  } catch (err) {
+    console.error('Error:', err);
+    loading.style.display = 'none';
+    status.innerHTML = '<div class="error"><b>Error:</b> Could not load data. Make sure the spreadsheet is publicly accessible.</div>';
+    timestamp.classList.remove('loading');
+  }
+}
+
+function handleQueryResponse(response) {
+  const loading = document.getElementById('loading');
+  const content = document.getElementById('content');
+  const status = document.getElementById('status');
+  const timestamp = document.getElementById('timestamp');
+  
+  if (response.isError()) {
+    loading.style.display = 'none';
+    status.innerHTML = '<div class="error"><b>Error:</b> ' + response.getMessage() + '</div>';
+    timestamp.classList.remove('loading');
+    return;
+  }
+  
+  try {
+    const data = response.getDataTable();
+    const parsedData = parseGoogleData(data);
+    
+    console.log('Parsed data:', parsedData);
+    
+    if (Object.keys(parsedData).length === 0) {
+      throw new Error('No valid metrics found in sheet');
     }
     
-    console.log('CSV received, length:', csv.length);
-    
-    if (!csv || csv.length < 50) throw new Error('Sheet appears empty or is not accessible');
-    
-    const data = parseCSV(csv);
-    console.log('Parsed data:', data);
-    
-    if (Object.keys(data).length === 0) throw new Error('No valid metrics found in sheet');
-    
-    renderDashboard(data);
+    renderDashboard(parsedData);
     const now = new Date();
     timestamp.textContent = now.toLocaleTimeString();
     document.getElementById('update-time').textContent = now.toLocaleTimeString();
@@ -200,43 +193,30 @@ async function refreshData() {
     timestamp.classList.remove('loading');
     
   } catch (err) {
-    console.error('Error:', err);
+    console.error('Parse error:', err);
     loading.style.display = 'none';
-    status.innerHTML = `<div class="error"><b>⚠️ Error loading data:</b><br>${err.message}<br><br><b>Fix:</b> Make sure your Google Sheet is published:<br>1. Open the sheet<br>2. Click "Share" → "Publish to web"<br>3. Choose "Comma-separated values (.csv)" format<br>4. Click "Publish"</div>`;
+    status.innerHTML = '<div class="error"><b>Error parsing data:</b> ' + err.message + '</div>';
     timestamp.classList.remove('loading');
   }
 }
 
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n');
-  if (lines.length < 2) return {};
-  
-  const headers = lines[0].split(',').map(h => h.trim().replace(/^"|"$/g, ''));
+function parseGoogleData(dataTable) {
   const data = {};
   
-  for (let i = 1; i < lines.length; i++) {
-    if (!lines[i].trim()) continue;
-    const cells = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+  for (let row = 0; row < dataTable.getNumberOfRows(); row++) {
+    const product = dataTable.getValue(row, 0);
+    const metric = dataTable.getValue(row, 1);
     
-    const obj = {};
-    headers.forEach((h, idx) => { obj[h] = cells[idx] || ''; });
+    if (!product || !metric) continue;
     
-    const product = obj['Product Line'] || obj['Product'] || '';
-    const metric = obj['Metrics'] || obj['Metric'] || '';
-    
-    if (product && metric) {
-      if (!data[product]) data[product] = {};
-      data[product][metric] = {
-        MTD: parseFloat(obj['MTD'] || '0'),
-        D1: parseFloat(obj['D-1'] || obj['D1'] || '0'),
-        D2: parseFloat(obj['D-2'] || obj['D2'] || '0'),
-        D3: parseFloat(obj['D-3'] || obj['D3'] || '0'),
-        D4: parseFloat(obj['D-4'] || obj['D4'] || '0'),
-        ENT: parseFloat(obj['ENT'] || '0'),
-        MID: parseFloat(obj['MID'] || '0'),
-        SMB: parseFloat(obj['SMB'] || '0')
-      };
+    const values = {};
+    for (let col = 2; col < dataTable.getNumberOfColumns(); col++) {
+      const val = dataTable.getValue(row, col);
+      values[dataTable.getColumnLabel(col)] = parseFloat(val) || 0;
     }
+    
+    if (!data[product]) data[product] = {};
+    data[product][metric] = values;
   }
   
   return data;
@@ -246,7 +226,6 @@ function renderDashboard(data) {
   renderSLACards(data);
   renderPendencyCards(data);
   renderP95P99Cards(data);
-  renderIssuesCards(data);
 }
 
 function renderSLACards(data) {
@@ -257,11 +236,11 @@ function renderSLACards(data) {
     const metrics = data[product];
     if (!metrics) return;
     
-    const slaKey = Object.keys(metrics).find(m => m.includes('SLA'));
+    const slaKey = Object.keys(metrics).find(m => m.toLowerCase().includes('sla'));
     if (!slaKey) return;
     
     const sla = metrics[slaKey];
-    const mtd = sla.MTD || 0;
+    const mtd = sla['MTD'] || sla.MTD || 0;
     const color = colors[product];
     
     const card = document.createElement('div');
@@ -277,12 +256,9 @@ function renderSLACards(data) {
         <span class="dot" style="background:${color.dot};"></span>
       </div>
       <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(mtd)}</span><span class="munit">%</span></div>
-      <div class="lc" data-pts="[${sla.D4},${sla.D3},${sla.D2},${sla.D1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="%" style="width:100%;height:48px;"></div>
     `;
     grid.appendChild(card);
   });
-  
-  initCharts();
 }
 
 function renderPendencyCards(data) {
@@ -293,11 +269,11 @@ function renderPendencyCards(data) {
     const metrics = data[product];
     if (!metrics) return;
     
-    const pendKey = Object.keys(metrics).find(m => m.includes('Pendency'));
+    const pendKey = Object.keys(metrics).find(m => m.toLowerCase().includes('pendency'));
     if (!pendKey) return;
     
     const pend = metrics[pendKey];
-    const mtd = pend.MTD || 0;
+    const mtd = pend['MTD'] || pend.MTD || 0;
     const color = colors[product];
     
     const card = document.createElement('div');
@@ -314,12 +290,9 @@ function renderPendencyCards(data) {
       </div>
       <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(mtd)}</span></div>
       <div class="pmeta">VINs > 6 hrs</div>
-      <div class="lc" data-pts="[${pend.D4},${pend.D3},${pend.D2},${pend.D1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:48px;"></div>
     `;
     grid.appendChild(card);
   });
-  
-  initCharts();
 }
 
 function renderP95P99Cards(data) {
@@ -330,18 +303,18 @@ function renderP95P99Cards(data) {
     const metrics = data[product];
     if (!metrics) return;
     
-    const p95Key = Object.keys(metrics).find(m => m.includes('P95'));
+    const p95Key = Object.keys(metrics).find(m => m.toLowerCase().includes('p95'));
     if (!p95Key) return;
     
     const p95 = metrics[p95Key];
-    const p99Key = Object.keys(metrics).find(m => m.includes('P99'));
+    const p99Key = Object.keys(metrics).find(m => m.toLowerCase().includes('p99'));
     const p99 = metrics[p99Key] || p95;
-    const mtd95 = p95.MTD || 0;
-    const mtd99 = p99.MTD || 0;
+    const mtd95 = p95['MTD'] || p95.MTD || 0;
+    const mtd99 = p99['MTD'] || p99.MTD || 0;
     const color = colors[product];
     
     const card = document.createElement('div');
-    card.className = 'card ptcard';
+    card.className = 'card';
     card.innerHTML = `
       <div class="card-top">
         <div class="card-id">
@@ -352,103 +325,25 @@ function renderP95P99Cards(data) {
         </div>
       </div>
       <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;">
-        <div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(mtd95)}</div></div>
-        <div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(mtd99)}</div></div>
+        <div><div style="color:#9AA0AD;font-weight:600;font-size:10px;">P95</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(mtd95)}</div></div>
+        <div><div style="color:#9AA0AD;font-weight:600;font-size:10px;">P99</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(mtd99)}</div></div>
       </div>
     `;
     grid.appendChild(card);
   });
 }
 
-function renderIssuesCards(data) {
-  const grid = document.getElementById('issues-grid');
-  grid.innerHTML = '';
-  
-  const issueProducts = ['Images', '360', 'Video'];
-  issueProducts.forEach(product => {
-    const metrics = data[product];
-    if (!metrics) return;
-    
-    const color = colors[product];
-    const card = document.createElement('div');
-    card.className = 'card icard';
-    
-    let issueRows = '';
-    let issueCount = 0;
-    
-    Object.keys(metrics).forEach(metricKey => {
-      if (metricKey.includes('Issue') || metricKey.includes('Top') || metricKey.includes('Problem')) {
-        const issue = metrics[metricKey];
-        issueCount++;
-        const rankColor = product === 'Images' ? '#C07C12' : '#D23B3A';
-        const rankBg = product === 'Images' ? '#FBF2DF' : '#FCEBEB';
-        
-        issueRows += `
-          <div class="irow">
-            <span class="irank" style="background:${rankBg};color:${rankColor};">${issueCount}</span>
-            <div class="itxt"><div class="ititle">${metricKey}</div><div class="idesc">Issue</div></div>
-            <div class="imtd">${Math.round(issue.MTD)}</div>
-            <div class="ichart"><div class="lc" data-pts="[${issue.D4},${issue.D3},${issue.D2},${issue.D1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
-          </div>
-        `;
-      }
-    });
-    
-    if (issueCount === 0) {
-      issueRows = `<div class="irow" style="padding:20px 15px;text-align:center;color:#9AA0AD;">No issues data available</div>`;
-    }
-    
-    card.innerHTML = `
-      <div class="ihead"><span class="dot" style="background:${color.dot};"></span><span class="pname">${product}</span></div>
-      ${issueRows}
-    `;
-    
-    grid.appendChild(card);
-  });
-  
-  initCharts();
-}
-
-function initCharts() {
-  document.querySelectorAll('.lc').forEach(build);
-}
-
-function build(el){
-  var pts=JSON.parse(el.getAttribute('data-pts')), labels=JSON.parse(el.getAttribute('data-labels')), unit=el.getAttribute('data-unit')||'';
-  var n=pts.length, mn=Math.min.apply(null,pts), mx=Math.max.apply(null,pts), rng=(mx-mn)||1;
-  var col=pts[n-1]>=pts[0]?'#E2504F':'#1D9E75';
-  var W=100,H=40,pX=3,pT=6,pB=7;
-  function X(i){return pX+i*(W-2*pX)/(n-1);}
-  function Y(v){return (H-pB)-((v-mn)/rng)*((H-pB)-pT);}
-  var lp=pts.map(function(v,i){return X(i).toFixed(2)+','+Y(v).toFixed(2);});
-  var area='M'+X(0).toFixed(2)+','+(H-pB)+' L'+lp.join(' L')+' L'+X(n-1).toFixed(2)+','+(H-pB)+' Z';
-  var gid='g'+Math.random().toString(36).slice(2,9);
-  var dots=pts.map(function(v,i){return '<circle cx="'+X(i).toFixed(2)+'" cy="'+Y(v).toFixed(2)+'" r="1.3" fill="'+col+'"/>';}).join('');
-  var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;">'
-    +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.22"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
-    +'<path d="'+area+'" fill="url(#'+gid+')"/>'
-    +'<polyline points="'+lp.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+dots+'</svg>';
-  var tip=document.createElement('div'); tip.className='lc-tip';
-  var cur=document.createElement('div'); cur.className='lc-cursor'; cur.style.background=col;
-  el.innerHTML=svg; el.appendChild(tip); el.appendChild(cur);
-  for(var i=0;i<n;i++){
-    var hit=document.createElement('div');
-    hit.style.cssText='position:absolute;top:0;bottom:0;left:'+((i-0.5)/n*100)+'%;width:'+(100/n)+'%;';
-    (function(idx){
-      hit.addEventListener('mouseenter',function(){
-        var lx=X(idx), ly=Y(pts[idx]);
-        tip.style.left=lx+'%'; tip.style.top=(ly/H*100)+'%'; tip.style.display='block';
-        tip.textContent=labels[idx]+' · '+pts[idx]+unit;
-        cur.style.left=lx+'%'; cur.style.top=(ly/H*100)+'%'; cur.style.display='block';
-      });
-    })(i);
-    el.appendChild(hit);
-  }
-  el.addEventListener('mouseleave',function(){tip.style.display='none';cur.style.display='none';});
-}
+// Load Google Visualization API
+google.charts.load('current', {'packages':['corechart', 'table']});
+google.charts.setOnLoadCallback(function() {
+  console.log('Google Charts API loaded');
+});
 
 document.getElementById('timestamp').addEventListener('click', refreshData);
-window.addEventListener('DOMContentLoaded', refreshData);
-setInterval(refreshData, 300000); // Auto-refresh every 5 minutes
+window.addEventListener('DOMContentLoaded', function() {
+  // Auto-load with default URL
+  loadFromUrl();
+  setInterval(refreshData, 300000); // Auto-refresh every 5 minutes
+});
 </script>
 </body></html>
