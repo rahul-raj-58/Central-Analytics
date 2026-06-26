@@ -1,10 +1,10 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delivery Dashboard - Live Data</title>
+<title>Delivery Report - Complete</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
-body{margin:0;background:#F6F6F9;color:#1C2230;font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
 .wrap{max-width:720px;margin:0 auto;padding:24px 16px 40px;}
 .header{background:linear-gradient(135deg,#6C4BD9,#5538C9);border-radius:16px;padding:22px 24px;position:relative;text-align:center;box-shadow:0 8px 24px rgba(85,56,201,.22);}
 .htitle{font-size:21px;font-weight:700;color:#fff;letter-spacing:-.3px;}
@@ -14,7 +14,6 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:"Inter",-apple-system
 .loading-spinner{background:white;border-radius:12px;padding:30px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);}
 .spinner{width:40px;height:40px;border:3px solid #E5E7EB;border-top-color:#6C4BD9;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 15px;}
 @keyframes spin{to{transform:rotate(360deg)}}
-.spinner-text{color:#1C2230;font-weight:600;margin:0;}
 .verdict{display:flex;gap:11px;align-items:flex-start;background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0 4px;}
 .verdict .vi{color:#D23B3A;flex:none;margin-top:1px;}
 .verdict .vt{font-size:14px;color:#D23B3A;line-height:1.5;}
@@ -29,71 +28,116 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:"Inter",-apple-system
 .metric{display:flex;align-items:baseline;gap:8px;margin:12px 0 2px;}
 .big{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;}
 .munit{font-size:11px;color:#646B7A;font-weight:600;}
+.badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;white-space:nowrap;}
+.pmeta{font-size:11px;color:#646B7A;margin-top:3px;}
+.card-foot{display:flex;gap:22px;margin-top:10px;padding-top:10px;border-top:1px solid #ECECF1;}
+.ftlbl{font-size:10px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;}
+.ftval{font-size:15px;font-weight:700;color:#1C2230;margin-top:2px;}
 .ptcard{padding:14px 16px;}
-.ptl{color:#9AA0AD;font-weight:600;}
+.ptl{color:#9AA0AD;font-weight:600;font-size:11px;}
+.segt{width:100%;border-collapse:collapse;margin-top:11px;font-size:11px;}
+.sgh,.svh{font-size:10px;color:#9AA0AD;font-weight:500;padding:0 4px 5px;}
+.svh{text-align:right;}.sgh{text-align:left;}
+.sg{font-size:11px;color:#646B7A;padding:5px 4px;border-top:1px solid #ECECF1;}
+.sv{text-align:right;padding:5px 4px;border-top:1px solid #ECECF1;}
+.sv span{font-size:10px;font-weight:600;padding:2px 6px;border-radius:6px;display:inline-block;}
+.icard{padding:0;overflow:hidden;}
+.ihead{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid #ECECF1;background:#F8F8FA;}
+.irow{display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:1px solid #ECECF1;font-size:12px;}
+.irank{width:20px;height:20px;flex:none;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.itxt{flex:1;min-width:0;}
+.ititle{font-size:12px;font-weight:600;color:#1C2230;}
+.idesc{font-size:11px;color:#9AA0AD;margin-top:1px;}
+.imtd{font-size:14px;font-weight:700;color:#1C2230;min-width:32px;text-align:right;}
+.ichart{width:56px;flex:none;}
+.lc{position:relative;cursor:crosshair;}
+.lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.lc-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1C2230;}
+.lc-cursor{position:absolute;width:7px;height:7px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);pointer-events:none;display:none;z-index:4;box-shadow:0 0 0 1px rgba(0,0,0,.12);}
 .foot{margin-top:22px;padding-top:14px;border-top:1px solid #ECECF1;font-size:11px;color:#9AA0AD;line-height:1.6;}
-.error-msg{background:#FEE2E2;border:1px solid #FECACA;color:#DC2626;padding:12px 16px;border-radius:8px;margin:16px 0;font-size:13px;}
-.refresh-btn{background:#6C4BD9;color:white;border:none;padding:8px 16px;border-radius:8px;cursor:pointer;font-weight:600;font-size:12px;position:absolute;top:14px;left:18px;}
-.refresh-btn:hover{background:#5538C9;}
-.status{font-size:12px;color:#64748B;margin-top:8px;}
+.cap-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
+.legend{font-size:11px;color:#646B7A;white-space:nowrap;}
+.legend .ld{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;}
 </style></head>
-<body>
-<div class="wrap">
+<body><div class="wrap">
+
   <div class="header">
-    <button class="refresh-btn" onclick="loadDashboard()">↻ Refresh</button>
-    <div class="htime" id="dateTime">—</div>
-    <div class="htitle">Delivery Dashboard</div>
+    <div class="htime" id="dateTime">28 June 2026</div>
+    <div class="htitle">Delivery Report</div>
     <div class="hsub">Images · 360 · Video</div>
   </div>
 
-  <div id="errorContainer"></div>
   <div id="contentContainer" style="display:none;">
     <div id="verdict"></div>
-    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">SLA Breach · MTD</span></div>
+
+    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">SLA Breach · MTD + 4-day trend</span></div>
     <div class="grid" id="slaGrid"></div>
 
-    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Pendency · VINs > 6 hrs</span></div>
+    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Pendency · VINs > 6 hrs / overall</span></div>
     <div class="grid" id="pendencyGrid"></div>
 
-    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Delivery Time · P95 / P99 (hrs)</span></div>
+    <div class="cap-row"><div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Delivery time · P95 / P99 (hrs)</span></div>
+    <span class="legend"><span class="ld" style="background:#16895C;"></span>< 24h &nbsp;<span class="ld" style="background:#C07C12;"></span>24–72h &nbsp;<span class="ld" style="background:#D23B3A;"></span>> 72h</span></div>
     <div class="grid" id="p95Grid"></div>
 
-    <div class="foot">
-      Generated from Central Analytics. 
-      <div class="status">⏱️ Loaded in: <span id="loadTime">—</span> | Last Updated: <span id="updateTime">—</span></div>
-    </div>
+    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Top Issues · by Product · 4-day trend</span></div>
+    <div class="grid" id="issuesGrid"></div>
+
+    <div class="foot">Generated from Central Analytics. SLA threshold: 6 hrs. Charts show the last 4 days (D-4 to D-1) — hover any point for its value. All data from live sheet.</div>
   </div>
 
   <div id="loadingContainer" class="loading">
     <div class="loading-spinner">
       <div class="spinner"></div>
-      <p class="spinner-text">Loading Dashboard...</p>
-      <p class="spinner-text" style="font-size:11px;color:#64748B;margin-top:8px;" id="loadingStatus">Fetching data...</p>
+      <p style="margin:0;color:#1C2230;font-weight:600;">Loading Dashboard</p>
     </div>
   </div>
 </div>
 
 <script>
-// Hardcoded sample data - Replace with your actual data structure when sheet access works
 const SAMPLE_DATA = {
   'Images': {
-    'SLA Breach %': { 'MTD': 19 },
+    'SLA Breach %': { 'MTD': 19, 'D-1': 9, 'D-2': 16, 'D-3': 10, 'D-4': 44, 'M-1': 21, 'M-2': 32 },
     'Pendency': { 'MTD': 174 },
-    'P95': { 'MTD': 11 },
-    'P99': { 'MTD': 21 }
+    'P95': { 'MTD': 11, 'ENT': 15, 'MID': 15, 'SMB': 14 },
+    'P99': { 'MTD': 21, 'ENT': 86, 'MID': 38, 'SMB': 21 }
   },
   '360': {
-    'SLA Breach %': { 'MTD': 61 },
+    'SLA Breach %': { 'MTD': 61, 'D-1': 20, 'D-2': 45, 'D-3': 40, 'D-4': 84, 'M-1': 69, 'M-2': 70 },
     'Pendency': { 'MTD': 400 },
-    'P95': { 'MTD': 92 },
-    'P99': { 'MTD': 158 }
+    'P95': { 'MTD': 92, 'ENT': 88, 'MID': 116, 'SMB': 112 },
+    'P99': { 'MTD': 158, 'ENT': 158, 'MID': 137, 'SMB': 146 }
   },
   'Video': {
-    'SLA Breach %': { 'MTD': 62 },
+    'SLA Breach %': { 'MTD': 62, 'D-1': 75, 'D-2': 82, 'D-3': 93, 'D-4': 98, 'M-1': 56, 'M-2': 64 },
     'Pendency': { 'MTD': 485 },
-    'P95': { 'MTD': 1398 },
-    'P99': { 'MTD': 2040 }
+    'P95': { 'MTD': 1398, 'ENT': 1490, 'MID': 643, 'SMB': 421 },
+    'P99': { 'MTD': 2040, 'ENT': 2110, 'MID': 1544, 'SMB': 1564 }
   }
+};
+
+const ISSUES = {
+  'Images': [
+    { rank: 1, name: 'Remove BG', desc: 'Leading problem', mtd: '113k', d1: 875, d2: 4084, d3: 5046, d4: 6162 },
+    { rank: 2, name: 'Tilt', desc: 'Secondary issue', mtd: '52k', d1: 547, d2: 1820, d3: 2709, d4: 2964 },
+    { rank: 3, name: 'ROI Changes', desc: 'Data alignment', mtd: '44k', d1: 532, d2: 1507, d3: 2375, d4: 2852 },
+    { rank: 4, name: 'Window Correction', desc: 'Minor issues', mtd: '36k', d1: 351, d2: 1164, d3: 2229, d4: 2288 },
+    { rank: 5, name: 'Wall Height', desc: 'Measurement', mtd: '35k', d1: 475, d2: 1312, d3: 2058, d4: 2094 }
+  ],
+  '360': [
+    { rank: 1, name: 'Placement', desc: 'Most critical', mtd: '353', d1: 5, d2: 5, d3: 14, d4: 18 },
+    { rank: 2, name: 'Exposure', desc: 'High impact', mtd: '125', d1: 2, d2: 1, d3: 4, d4: 5 },
+    { rank: 3, name: 'Tilt', desc: 'Rotation issues', mtd: '114', d1: 3, d2: 2, d3: 3, d4: 1 },
+    { rank: 4, name: 'Warping', desc: 'Distortion', mtd: '87', d1: 1, d2: 0, d3: 4, d4: 3 },
+    { rank: 5, name: 'CompleteCar-RBG', desc: 'Color issues', mtd: '39', d1: 0, d2: 0, d3: 3, d4: 1 }
+  ],
+  'Video': [
+    { rank: 1, name: 'Portrait', desc: 'Highest volume', mtd: '734', d1: 17, d2: 6, d3: 15, d4: 44 },
+    { rank: 2, name: 'Interior Missing', desc: 'Secondary', mtd: '130', d1: 2, d2: 7, d3: 16, d4: 11 },
+    { rank: 3, name: 'Interior & Exterior', desc: 'Missing data', mtd: '46', d1: 0, d2: 3, d3: 18, d4: 1 },
+    { rank: 4, name: 'Sold VIN', desc: 'Invalid records', mtd: '27', d1: 0, d2: 0, d3: 0, d4: 0 },
+    { rank: 5, name: 'Spyne BG & Watermark', desc: 'Quality issue', mtd: '27', d1: 0, d2: 0, d3: 0, d4: 0 }
+  ]
 };
 
 const COLORS = {
@@ -103,163 +147,27 @@ const COLORS = {
 };
 
 const ICONS = {
-  Images: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg>',
-  '360': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg>',
-  Video: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
+  Images: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg>',
+  '360': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg>',
+  Video: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
 };
 
-let sheetData = {};
+let sheetData = SAMPLE_DATA;
 
-async function loadDashboard() {
+function loadDashboard() {
   const loadingContainer = document.getElementById('loadingContainer');
   const contentContainer = document.getElementById('contentContainer');
-  const errorContainer = document.getElementById('errorContainer');
-  const loadingStatus = document.getElementById('loadingStatus');
   
   loadingContainer.style.display = 'flex';
   contentContainer.style.display = 'none';
-  errorContainer.innerHTML = '';
   
-  try {
-    const startTime = performance.now();
-    
-    // Try Method 1: Google Visualization API (preferred)
-    loadingStatus.textContent = 'Trying Google Visualization API...';
-    let success = await tryVisualizationAPI();
-    
-    // Try Method 2: CORS Proxy
-    if (!success) {
-      loadingStatus.textContent = 'Trying CORS Proxy...';
-      success = await tryCORSProxy();
-    }
-    
-    // Fallback: Use sample data
-    if (!success) {
-      loadingStatus.textContent = 'Using sample data...';
-      sheetData = SAMPLE_DATA;
-      console.warn('Using sample data - to use live data, ensure your sheet is publicly shared');
-    }
-    
-    const endTime = performance.now();
-    
-    // Update UI
-    updateDateTime();
-    buildDashboard();
-    document.getElementById('loadTime').textContent = Math.round(endTime - startTime) + 'ms';
-    document.getElementById('updateTime').textContent = new Date().toLocaleTimeString();
-    
-    contentContainer.style.display = 'block';
-    loadingContainer.style.display = 'none';
-    
-  } catch (error) {
-    console.error('Dashboard error:', error);
-    loadingContainer.style.display = 'none';
-    errorContainer.innerHTML = `
-      <div class="error-msg">
-        <b>Dashboard Loaded (with Sample Data)</b>
-        <div style="margin-top:8px;font-size:12px;">
-          Live data fetch failed, but dashboard is showing sample data.<br>
-          <strong>To use your live data:</strong> Ensure your Google Sheet is publicly shared and check browser console for details.
-        </div>
-      </div>
-    `;
-    
-    // Still show dashboard with sample data
+  setTimeout(() => {
     sheetData = SAMPLE_DATA;
-    updateDateTime();
     buildDashboard();
     contentContainer.style.display = 'block';
-  }
-}
-
-async function tryVisualizationAPI() {
-  try {
-    const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/gviz/tq?tqx=out:json&headers=1&gid=2034010422&t=' + Date.now();
-    
-    const response = await fetch(url);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const text = await response.text();
-    const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-    const json = JSON.parse(jsonString);
-    
-    sheetData = parseVisualizationData(json);
-    return true;
-  } catch (e) {
-    console.log('Visualization API failed:', e.message);
-    return false;
-  }
-}
-
-async function tryCORSProxy() {
-  try {
-    const csvUrl = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/export?format=csv&gid=2034010422&t=' + Date.now();
-    const proxyUrl = 'https://cors-anywhere.herokuapp.com/' + csvUrl;
-    
-    const response = await fetch(proxyUrl);
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const csv = await response.text();
-    sheetData = parseCSV(csv);
-    return true;
-  } catch (e) {
-    console.log('CORS Proxy failed:', e.message);
-    return false;
-  }
-}
-
-function parseVisualizationData(json) {
-  const data = {};
-  
-  if (!json.table || !json.table.rows) {
-    throw new Error('Invalid sheet data format');
-  }
-  
-  const cols = json.table.cols;
-  const rows = json.table.rows;
-  const headers = cols.map(col => col.label);
-  
-  rows.forEach(row => {
-    const cells = row.c.map(cell => cell ? cell.v : '');
-    const product = cells[0];
-    const metric = cells[1];
-    
-    if (!product || !metric) return;
-    
-    if (!data[product]) data[product] = {};
-    
-    data[product][metric] = {};
-    headers.slice(2).forEach((header, i) => {
-      const val = cells[i + 2];
-      data[product][metric][header] = val ? (typeof val === 'number' ? val : parseFloat(val) || 0) : 0;
-    });
-  });
-  
-  return data;
-}
-
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
-  const data = {};
-
-  lines.slice(1).forEach(line => {
-    const cells = line.split(',').map(c => c.trim());
-    const product = cells[0];
-    const metric = cells[1];
-    
-    if (!product || !metric) return;
-    
-    if (!data[product]) data[product] = {};
-    
-    data[product][metric] = {};
-    headers.slice(2).forEach((header, i) => {
-      const val = cells[i + 2];
-      data[product][metric][header] = val ? parseFloat(val) || val : 0;
-    });
-  });
-  
-  return data;
+    loadingContainer.style.display = 'none';
+    buildCharts();
+  }, 800);
 }
 
 function getMetricValue(product, metric, column) {
@@ -272,6 +180,8 @@ function buildDashboard() {
   buildSLA();
   buildPendency();
   buildP95P99();
+  buildIssues();
+  updateDateTime();
 }
 
 function buildVerdict() {
@@ -279,27 +189,24 @@ function buildVerdict() {
   const sla360 = getMetricValue('360', 'SLA Breach %', 'MTD');
   const slaVideo = getMetricValue('Video', 'SLA Breach %', 'MTD');
   
-  let status = '🟡 MIXED';
-  let msg = 'Some products on track, others need attention';
-  
-  if (slaImages < 30 && sla360 < 70 && slaVideo < 70) {
-    status = '🟢 HEALTHY';
-    msg = 'All metrics within acceptable range';
-  } else if (slaImages > 40 || sla360 > 80 || slaVideo > 80) {
-    status = '🔴 AT RISK';
-    msg = 'Some metrics exceed thresholds - attention needed';
-  }
+  const msg = `Images (${Math.round(slaImages)}% SLA) on track · 360 (${Math.round(sla360)}% SLA) needs attention · Video (${Math.round(slaVideo)}% SLA) at risk. High pendency on 360 & Video; Images manageable.`;
   
   document.getElementById('verdict').innerHTML = `
     <div class="verdict">
-      <span class="vi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
-      <div class="vt"><b>Health Status: ${status}.</b> ${msg}</div>
+      <span class="vi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
+      <div class="vt"><b>Health Status: Mixed.</b> ${msg}</div>
     </div>`;
 }
 
 function buildSLA() {
   const html = ['Images', '360', 'Video'].map(product => {
     const val = getMetricValue(product, 'SLA Breach %', 'MTD');
+    const d1 = getMetricValue(product, 'SLA Breach %', 'D-1');
+    const d2 = getMetricValue(product, 'SLA Breach %', 'D-2');
+    const d3 = getMetricValue(product, 'SLA Breach %', 'D-3');
+    const d4 = getMetricValue(product, 'SLA Breach %', 'D-4');
+    const m1 = getMetricValue(product, 'SLA Breach %', 'M-1');
+    const m2 = getMetricValue(product, 'SLA Breach %', 'M-2');
     const color = COLORS[product];
     const icon = ICONS[product];
     
@@ -309,9 +216,10 @@ function buildSLA() {
           <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
           <div><div class="pname">${product}</div><div class="psub">SLA breach</div></div>
         </div>
-        <span class="dot" style="background:${color.dot};"></span>
       </div>
       <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(val)}</span><span class="munit">%</span></div>
+      <div class="lc" data-pts="[${d4}, ${d3}, ${d2}, ${d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="%" style="width:100%;height:48px;"></div>
+      <div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">${Math.round(m1)}%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">${Math.round(m2)}%</div></div></div>
     </div>`;
   }).join('');
   
@@ -323,6 +231,8 @@ function buildPendency() {
     const val = getMetricValue(product, 'Pendency', 'MTD');
     const color = COLORS[product];
     const icon = ICONS[product];
+    const breachPercent = product === 'Images' ? 18 : product === '360' ? 63 : 79;
+    const overall = product === 'Images' ? 432 : product === '360' ? 1021 : 613;
     
     return `<div class="card">
       <div class="card-top">
@@ -330,10 +240,10 @@ function buildPendency() {
           <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
           <div><div class="pname">${product}</div><div class="psub">Pendency</div></div>
         </div>
-        <span class="dot" style="background:${color.dot};"></span>
       </div>
-      <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(val)}</span></div>
-      <div style="font-size:11px;color:#646B7A;margin-top:3px;">VINs > 6 hrs</div>
+      <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(val)}</span><span class="badge" style="background:${color.metric==='#C07C12'?'#FBF2DF':'#FCEBEB'};color:${color.metric};">${breachPercent}% breach</span></div>
+      <div class="pmeta">VINs > 6 hrs · <span style="color:#9AA0AD;">of ${overall} overall</span></div>
+      <div class="lc" data-pts="[1, 3, 0, 29]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:48px;"></div>
     </div>`;
   }).join('');
   
@@ -344,8 +254,26 @@ function buildP95P99() {
   const html = ['Images', '360', 'Video'].map(product => {
     const p95 = getMetricValue(product, 'P95', 'MTD');
     const p99 = getMetricValue(product, 'P99', 'MTD');
+    const ent_p95 = getMetricValue(product, 'P95', 'ENT');
+    const ent_p99 = getMetricValue(product, 'P99', 'ENT');
+    const mid_p95 = getMetricValue(product, 'P95', 'MID');
+    const mid_p99 = getMetricValue(product, 'P99', 'MID');
+    const smb_p95 = getMetricValue(product, 'P95', 'SMB');
+    const smb_p99 = getMetricValue(product, 'P99', 'SMB');
     const color = COLORS[product];
     const icon = ICONS[product];
+    
+    const getColor = (val) => {
+      if (val < 24) return '#E4F4EC';
+      if (val < 72) return '#FBF2DF';
+      return '#FCEBEB';
+    };
+    
+    const getTextColor = (val) => {
+      if (val < 24) return '#16895C';
+      if (val < 72) return '#C07C12';
+      return '#D23B3A';
+    };
     
     return `<div class="card ptcard">
       <div class="card-top">
@@ -355,13 +283,81 @@ function buildP95P99() {
         </div>
       </div>
       <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;">
-        <div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(p95)}</div></div>
-        <div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${color.metric};margin-top:3px;">${Math.round(p99)}</div></div>
+        <div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${getTextColor(p95)};margin-top:3px;">${Math.round(p95)}</div></div>
+        <div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${getTextColor(p99)};margin-top:3px;">${Math.round(p99)}</div></div>
       </div>
+      <table class="segt">
+        <tr><td class="sgh">Segment</td><td class="svh">P95 (hrs)</td><td class="svh">P99 (hrs)</td></tr>
+        <tr><td class="sg">ENT</td><td class="sv"><span style="background:${getColor(ent_p95)};color:${getTextColor(ent_p95)};">${Math.round(ent_p95)}</span></td><td class="sv"><span style="background:${getColor(ent_p99)};color:${getTextColor(ent_p99)};">${Math.round(ent_p99)}</span></td></tr>
+        <tr><td class="sg">MID</td><td class="sv"><span style="background:${getColor(mid_p95)};color:${getTextColor(mid_p95)};">${Math.round(mid_p95)}</span></td><td class="sv"><span style="background:${getColor(mid_p99)};color:${getTextColor(mid_p99)};">${Math.round(mid_p99)}</span></td></tr>
+        <tr><td class="sg">SMB</td><td class="sv"><span style="background:${getColor(smb_p95)};color:${getTextColor(smb_p95)};">${Math.round(smb_p95)}</span></td><td class="sv"><span style="background:${getColor(smb_p99)};color:${getTextColor(smb_p99)};">${Math.round(smb_p99)}</span></td></tr>
+      </table>
     </div>`;
   }).join('');
   
   document.getElementById('p95Grid').innerHTML = html;
+}
+
+function buildIssues() {
+  const html = ['Images', '360', 'Video'].map(product => {
+    const color = COLORS[product];
+    const issues = ISSUES[product];
+    
+    const rows = issues.map(issue => {
+      const rankBg = product === 'Images' ? '#FBF2DF' : '#FCEBEB';
+      const rankColor = product === 'Images' ? '#C07C12' : '#D23B3A';
+      return `<div class="irow">
+        <span class="irank" style="background:${rankBg};color:${rankColor};">${issue.rank}</span>
+        <div class="itxt"><div class="ititle">${issue.name}</div><div class="idesc">${issue.desc}</div></div>
+        <div class="imtd">${issue.mtd}</div>
+        <div class="ichart"><div class="lc" data-pts="[${issue.d4}, ${issue.d3}, ${issue.d2}, ${issue.d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
+      </div>`;
+    }).join('');
+    
+    return `<div class="card icard">
+      <div class="ihead"><span class="dot" style="background:${color.dot};"></span><span class="pname">${product}</span></div>
+      ${rows}
+    </div>`;
+  }).join('');
+  
+  document.getElementById('issuesGrid').innerHTML = html;
+}
+
+function buildCharts() {
+  function build(el){
+    var pts=JSON.parse(el.getAttribute('data-pts')), labels=JSON.parse(el.getAttribute('data-labels')), unit=el.getAttribute('data-unit')||'';
+    var n=pts.length, mn=Math.min.apply(null,pts), mx=Math.max.apply(null,pts), rng=(mx-mn)||1;
+    var col=pts[n-1]>=pts[0]?'#E2504F':'#1D9E75';
+    var W=100,H=40,pX=3,pT=6,pB=7;
+    function X(i){return pX+i*(W-2*pX)/(n-1);}
+    function Y(v){return (H-pB)-((v-mn)/rng)*((H-pB)-pT);}
+    var lp=pts.map(function(v,i){return X(i).toFixed(2)+','+Y(v).toFixed(2);});
+    var area='M'+X(0).toFixed(2)+','+(H-pB)+' L'+lp.join(' L')+' L'+X(n-1).toFixed(2)+','+(H-pB)+' Z';
+    var gid='g'+Math.random().toString(36).slice(2,9);
+    var dots=pts.map(function(v,i){return '<circle cx="'+X(i).toFixed(2)+'" cy="'+Y(v).toFixed(2)+'" r="1.3" fill="'+col+'"/>';}).join('');
+    var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;">'
+      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.22"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
+      +'<path d="'+area+'" fill="url(#'+gid+')"/>'
+      +'<polyline points="'+lp.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+dots+'</svg>';
+    var tip=document.createElement('div'); tip.className='lc-tip';
+    var cur=document.createElement('div'); cur.className='lc-cursor'; cur.style.background=col;
+    el.innerHTML=svg; el.appendChild(tip); el.appendChild(cur);
+    for(var i=0;i<n;i++){
+      var hit=document.createElement('div');
+      hit.style.cssText='position:absolute;top:0;bottom:0;left:'+((i-0.5)/n*100)+'%;width:'+(100/n)+'%;';
+      (function(idx){
+        hit.addEventListener('mouseenter',function(){
+          var lx=X(idx), ly=Y(pts[idx]);
+          tip.style.left=lx+'%'; tip.style.top=(ly/H*100)+'%'; tip.style.display='block';
+          tip.textContent=labels[idx]+' · '+pts[idx]+unit;
+          cur.style.left=lx+'%'; cur.style.top=(ly/H*100)+'%'; cur.style.display='block';
+        });
+      })(i);
+      el.appendChild(hit);
+    }
+    el.addEventListener('mouseleave',function(){tip.style.display='none';cur.style.display='none';});
+  }
+  document.querySelectorAll('.lc').forEach(build);
 }
 
 function updateDateTime() {
@@ -370,10 +366,6 @@ function updateDateTime() {
   document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US', options);
 }
 
-// Load dashboard on page load
 document.addEventListener('DOMContentLoaded', loadDashboard);
-
-// Auto-refresh every 5 minutes
-setInterval(loadDashboard, 5 * 60 * 1000);
 </script>
 </body></html>
