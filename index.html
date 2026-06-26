@@ -108,6 +108,15 @@ const ICONS = {
 
 let data = {};
 
+function cleanNumber(str) {
+  if (!str) return 0;
+  str = String(str).trim();
+  if (str === '' || str === '-') return 0;
+  str = str.replace(/,/g, '');
+  const num = parseFloat(str);
+  return isNaN(num) ? 0 : num;
+}
+
 async function loadDashboard() {
   const cached = getCache();
   
@@ -171,8 +180,7 @@ async function fetchData() {
     const vals = {};
     
     for (let j = 0; j < cols.length; j++) {
-      const v = (cells[2+j] || '').trim();
-      vals[cols[j]] = (v === '' || v === '-') ? 0 : (parseFloat(v) || 0);
+      vals[cols[j]] = cleanNumber(cells[2+j]);
     }
     
     if (metric.includes('SLA')) {
@@ -196,14 +204,20 @@ function parseCSV(line) {
   let inQuotes = false;
   
   for (let i = 0; i < line.length; i++) {
-    if (line[i] === '"') inQuotes = !inQuotes;
-    else if (line[i] === ',' && !inQuotes) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
       cells.push(cur);
       cur = '';
-    } else cur += line[i];
+    } else {
+      cur += char;
+    }
   }
   cells.push(cur);
-  return cells;
+  
+  return cells.map(c => c.replace(/^"|"$/g, ''));
 }
 
 function render() {
@@ -218,6 +232,13 @@ function render() {
 
 function v(metric, product, col) {
   return data[metric]?.[product]?.[col] ?? 0;
+}
+
+function formatNumber(num) {
+  if (num >= 1000) {
+    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  }
+  return Math.round(num);
 }
 
 function buildVerdict() {
@@ -291,7 +312,7 @@ function buildIssues() {
     const rows = issues.map((iss,idx) => {
       const rb = p==='Images'?'#FBF2DF':'#FCEBEB';
       const rc = p==='Images'?'#C07C12':'#D23B3A';
-      const dmtd = iss.mtd>1000?(iss.mtd/1000).toFixed(0)+'k':Math.round(iss.mtd);
+      const dmtd = formatNumber(iss.mtd);
       return `<div class="irow"><span class="irank" style="background:${rb};color:${rc};">${idx+1}</span><div class="itxt"><div class="ititle">${iss.name}</div><div class="idesc">MTD tracking</div></div><div class="imtd">${dmtd}</div><div class="ichart"><div class="lc" data-pts="[${iss.d4},${iss.d3},${iss.d2},${iss.d1}]" data-labels='["D-4","D-3","D-2","D-1"]' style="width:100%;height:28px;"></div></div></div>`;
     }).join('');
     
