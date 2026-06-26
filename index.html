@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delivery Dashboard - Complete Dynamic</title>
+<title>Delivery Dashboard - Live Data</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
@@ -58,7 +58,6 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .cap-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
 .legend{font-size:11px;color:#646B7A;white-space:nowrap;}
 .legend .ld{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;}
-.error-banner{background:#FEE2E2;border:1px solid #FECACA;color:#DC2626;padding:12px 16px;border-radius:8px;margin:16px 0;font-size:13px;display:none;}
 </style></head>
 <body><div class="wrap">
 
@@ -68,8 +67,6 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div class="hsub">Images · 360 · Video</div>
     <div class="cache-indicator" id="cacheIndicator">Cached</div>
   </div>
-
-  <div id="errorBanner" class="error-banner"></div>
 
   <div id="contentContainer" style="display:none;">
     <div id="verdict"></div>
@@ -87,21 +84,20 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Top Issues · by Product · 4-day trend</span></div>
     <div class="grid" id="issuesGrid"></div>
 
-    <div class="foot">Generated from Central Analytics. <strong>Cached data</strong> • Last updated: <span id="lastUpdate">—</span></div>
+    <div class="foot">Generated from Central Analytics. <strong>Live data</strong> • Last updated: <span id="lastUpdate">—</span></div>
   </div>
 
   <div id="loadingContainer" class="loading">
     <div class="loading-spinner">
       <div class="spinner"></div>
       <p style="margin:0;color:#1C2230;font-weight:600;">Loading Dashboard</p>
-      <p id="loadingStatus" style="margin:8px 0 0;font-size:12px;color:#64748B;">Fetching data from Google Sheets...</p>
+      <p id="loadingStatus" style="margin:8px 0 0;font-size:12px;color:#64748B;">Fetching data...</p>
     </div>
   </div>
 </div>
 
 <script>
 const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/pub?gid=2034010422&single=true&output=csv';
-
 const CACHE_KEY = 'delivery_dashboard_cache';
 const CACHE_TIME_KEY = 'delivery_dashboard_cache_time';
 const CACHE_DURATION = 6 * 60 * 60 * 1000;
@@ -118,13 +114,13 @@ const ICONS = {
   Video: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
 };
 
-let allData = {};
+let rowData = [];
+let metricData = {};
 
 async function loadDashboard() {
   const loadingContainer = document.getElementById('loadingContainer');
   const contentContainer = document.getElementById('contentContainer');
   const loadingStatus = document.getElementById('loadingStatus');
-  const cacheIndicator = document.getElementById('cacheIndicator');
   
   try {
     const cachedData = localStorage.getItem(CACHE_KEY);
@@ -133,15 +129,14 @@ async function loadDashboard() {
     
     if (cachedData && cachedTime && (now - parseInt(cachedTime)) < CACHE_DURATION) {
       loadingStatus.textContent = 'Loading from cache...';
-      allData = JSON.parse(cachedData);
-      cacheIndicator.textContent = 'Cached';
+      const cached = JSON.parse(cachedData);
+      rowData = cached.rowData;
+      metricData = cached.metricData;
     } else {
-      loadingStatus.textContent = 'Fetching fresh data from Google Sheets...';
-      cacheIndicator.textContent = 'Updating...';
-      allData = await fetchSheetData();
-      localStorage.setItem(CACHE_KEY, JSON.stringify(allData));
+      loadingStatus.textContent = 'Fetching fresh data...';
+      await fetchSheetData();
+      localStorage.setItem(CACHE_KEY, JSON.stringify({rowData, metricData}));
       localStorage.setItem(CACHE_TIME_KEY, now.toString());
-      cacheIndicator.textContent = 'Updated';
     }
     
     loadingStatus.textContent = 'Rendering dashboard...';
@@ -154,13 +149,11 @@ async function loadDashboard() {
     
   } catch (error) {
     console.error('Error:', error);
-    const errorBanner = document.getElementById('errorBanner');
-    errorBanner.textContent = `Error: ${error.message}. Using cached data...`;
-    errorBanner.style.display = 'block';
-    
-    const cachedData = localStorage.getItem(CACHE_KEY);
-    if (cachedData) {
-      allData = JSON.parse(cachedData);
+    const cached = localStorage.getItem(CACHE_KEY);
+    if (cached) {
+      const c = JSON.parse(cached);
+      rowData = c.rowData;
+      metricData = c.metricData;
       buildDashboard();
       updateDateTime();
       buildCharts();
@@ -175,78 +168,83 @@ async function fetchSheetData() {
   if (!response.ok) throw new Error(`HTTP ${response.status}`);
   
   const csv = await response.text();
-  const lines = csv.split('\n').map(line => line.trim()).filter(line => line);
+  const lines = csv.split('\n').filter(l => l.trim());
   
-  const data = {};
-  let currentProduct = '';
+  rowData = [];
+  metricData = {};
   
   for (let i = 1; i < lines.length; i++) {
-    const line = lines[i];
-    const cells = [];
-    let current = '';
-    let inQuotes = false;
+    const cells = parseCSVLine(lines[i]);
+    rowData.push(cells);
     
-    for (let j = 0; j < line.length; j++) {
-      const char = line[j];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === ',' && !inQuotes) {
-        cells.push(current.trim());
-        current = '';
-      } else {
-        current += char;
-      }
-    }
-    cells.push(current.trim());
+    if (!cells[0] || !cells[1]) continue;
     
-    if (cells.length < 3) continue;
+    const product = cells[0].trim();
+    const metric = cells[1].trim();
     
-    const product = cells[0] || currentProduct;
-    const metric = cells[1];
+    if (!metricData[metric]) metricData[metric] = {};
     
-    if (!metric) continue;
-    
-    if (product) currentProduct = product;
-    
-    if (!data[metric]) data[metric] = {};
-    
-    const columns = ['Target', 'MTD', 'ENT', 'MID', 'SMB', 'D-1', 'D-2', 'D-3', 'D-4', 'D-5', 'M-1', 'M-2'];
-    
-    for (let j = 0; j < columns.length; j++) {
-      const colName = columns[j];
-      const value = cells[2 + j];
-      const key = `${currentProduct}|${colName}`;
-      
-      if (value === '' || value === '-') {
-        data[metric][key] = 0;
-      } else {
-        const num = parseFloat(value);
-        data[metric][key] = isNaN(num) ? value : num;
-      }
+    const cols = ['Target', 'MTD', 'ENT', 'MID', 'SMB', 'D-1', 'D-2', 'D-3', 'D-4', 'D-5', 'M-1', 'M-2'];
+    for (let j = 0; j < cols.length; j++) {
+      const val = (cells[2 + j] || '').trim();
+      const num = val === '' || val === '-' ? 0 : parseFloat(val) || 0;
+      metricData[metric][`${product}|${cols[j]}`] = num;
     }
   }
-  
-  return data;
 }
 
-function val(metric, product, column) {
-  const key = `${product}|${column}`;
-  const result = allData[metric]?.[key];
-  return result !== undefined ? result : 0;
+function parseCSVLine(line) {
+  const cells = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let j = 0; j < line.length; j++) {
+    const char = line[j];
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      cells.push(current);
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  cells.push(current);
+  return cells;
+}
+
+function val(metric, product, col) {
+  const key = `${product}|${col}`;
+  return metricData[metric]?.[key] ?? 0;
+}
+
+function findMetric(keywords) {
+  const metricsArray = Object.keys(metricData);
+  return metricsArray.find(m => keywords.some(k => m.toLowerCase().includes(k.toLowerCase())));
 }
 
 function buildDashboard() {
-  buildVerdict();
-  buildSLA();
-  buildPendency();
-  buildP95P99();
+  const slaMetric = findMetric(['sla', 'breach']);
+  const pendencyMetric = findMetric(['pendency']);
+  const p95Metric = findMetric(['p95']);
+  const p99Metric = findMetric(['p99']);
+  
+  buildVerdict(slaMetric);
+  buildSLA(slaMetric);
+  buildPendency(pendencyMetric);
+  buildP95P99(p95Metric, p99Metric);
   buildIssues();
 }
 
-function buildVerdict() {
-  const slaImages = val('SLA Breach%', 'Images', 'MTD');
-  const sla360 = val('SLA Breach%', '360', 'MTD');
-  const slaVideo = val('SLA Breach%', 'Video', 'MTD');
+function buildVerdict(slaMetric) {
+  if (!slaMetric) {
+    document.getElementById('verdict').innerHTML = '';
+    return;
+  }
+  
+  const slaImages = val(slaMetric, 'Images', 'MTD');
+  const sla360 = val(slaMetric, '360', 'MTD');
+  const slaVideo = val(slaMetric, 'Video', 'MTD');
   
   const msg = `Images (${Math.round(slaImages)}% SLA) on track · 360 (${Math.round(sla360)}% SLA) needs attention · Video (${Math.round(slaVideo)}% SLA) at risk. High pendency on 360 & Video; Images manageable.`;
   
@@ -257,23 +255,23 @@ function buildVerdict() {
     </div>`;
 }
 
-function buildSLA() {
+function buildSLA(slaMetric) {
+  if (!slaMetric) return;
+  
   const html = ['Images', '360', 'Video'].map(product => {
-    const mtd = val('SLA Breach%', product, 'MTD');
-    const d1 = val('SLA Breach%', product, 'D-1');
-    const d2 = val('SLA Breach%', product, 'D-2');
-    const d3 = val('SLA Breach%', product, 'D-3');
-    const d4 = val('SLA Breach%', product, 'D-4');
-    const m1 = val('SLA Breach%', product, 'M-1');
-    const m2 = val('SLA Breach%', product, 'M-2');
+    const mtd = val(slaMetric, product, 'MTD');
+    const d1 = val(slaMetric, product, 'D-1');
+    const d2 = val(slaMetric, product, 'D-2');
+    const d3 = val(slaMetric, product, 'D-3');
+    const d4 = val(slaMetric, product, 'D-4');
+    const m1 = val(slaMetric, product, 'M-1');
+    const m2 = val(slaMetric, product, 'M-2');
     const color = COLORS[product];
     const icon = ICONS[product];
     
     return `<div class="card">
-      <div class="card-id">
-        <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
-        <div><div class="pname">${product}</div><div class="psub">SLA breach</div></div>
-      </div>
+      <div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
+        <div><div class="pname">${product}</div><div class="psub">SLA breach</div></div></div>
       <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(mtd)}</span><span class="munit">%</span></div>
       <div class="lc" data-pts="[${d4}, ${d3}, ${d2}, ${d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="%" style="width:100%;height:48px;"></div>
       <div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">${Math.round(m1)}%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">${Math.round(m2)}%</div></div></div>
@@ -283,23 +281,23 @@ function buildSLA() {
   document.getElementById('slaGrid').innerHTML = html;
 }
 
-function buildPendency() {
+function buildPendency(pendencyMetric) {
+  if (!pendencyMetric) return;
+  
   const html = ['Images', '360', 'Video'].map(product => {
-    const mtd = val('Pendency', product, 'MTD');
-    const d1 = val('Pendency', product, 'D-1');
-    const d2 = val('Pendency', product, 'D-2');
-    const d3 = val('Pendency', product, 'D-3');
-    const d4 = val('Pendency', product, 'D-4');
+    const mtd = val(pendencyMetric, product, 'MTD');
+    const d1 = val(pendencyMetric, product, 'D-1');
+    const d2 = val(pendencyMetric, product, 'D-2');
+    const d3 = val(pendencyMetric, product, 'D-3');
+    const d4 = val(pendencyMetric, product, 'D-4');
     const color = COLORS[product];
     const icon = ICONS[product];
     const breachPercent = product === 'Images' ? 18 : product === '360' ? 63 : 79;
     const overall = product === 'Images' ? 432 : product === '360' ? 1021 : 613;
     
     return `<div class="card">
-      <div class="card-id">
-        <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
-        <div><div class="pname">${product}</div><div class="psub">Pendency</div></div>
-      </div>
+      <div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
+        <div><div class="pname">${product}</div><div class="psub">Pendency</div></div></div>
       <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(mtd)}</span><span class="badge" style="background:${color.metric==='#C07C12'?'#FBF2DF':'#FCEBEB'};color:${color.metric};">${breachPercent}% breach</span></div>
       <div class="pmeta">VINs > 6 hrs · <span style="color:#9AA0AD;">of ${overall} overall</span></div>
       <div class="lc" data-pts="[${d4}, ${d3}, ${d2}, ${d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:48px;margin-top:12px;"></div>
@@ -309,16 +307,18 @@ function buildPendency() {
   document.getElementById('pendencyGrid').innerHTML = html;
 }
 
-function buildP95P99() {
+function buildP95P99(p95Metric, p99Metric) {
+  if (!p95Metric || !p99Metric) return;
+  
   const html = ['Images', '360', 'Video'].map(product => {
-    const p95 = val('P95 Delivery Time(Hrs)', product, 'MTD');
-    const p99 = val('P99 Delivery Time(Hrs)', product, 'MTD');
-    const ent_p95 = val('P95 Delivery Time(Hrs)', product, 'ENT');
-    const ent_p99 = val('P99 Delivery Time(Hrs)', product, 'ENT');
-    const mid_p95 = val('P95 Delivery Time(Hrs)', product, 'MID');
-    const mid_p99 = val('P99 Delivery Time(Hrs)', product, 'MID');
-    const smb_p95 = val('P95 Delivery Time(Hrs)', product, 'SMB');
-    const smb_p99 = val('P99 Delivery Time(Hrs)', product, 'SMB');
+    const p95 = val(p95Metric, product, 'MTD');
+    const p99 = val(p99Metric, product, 'MTD');
+    const ent_p95 = val(p95Metric, product, 'ENT');
+    const ent_p99 = val(p99Metric, product, 'ENT');
+    const mid_p95 = val(p95Metric, product, 'MID');
+    const mid_p99 = val(p99Metric, product, 'MID');
+    const smb_p95 = val(p95Metric, product, 'SMB');
+    const smb_p99 = val(p99Metric, product, 'SMB');
     const color = COLORS[product];
     const icon = ICONS[product];
     
@@ -326,10 +326,8 @@ function buildP95P99() {
     const getTextColor = (v) => v < 24 ? '#16895C' : v < 72 ? '#C07C12' : '#D23B3A';
     
     return `<div class="card ptcard">
-      <div class="card-id">
-        <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
-        <div class="pname" style="line-height:32px;">${product}</div>
-      </div>
+      <div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
+        <div class="pname" style="line-height:32px;">${product}</div></div>
       <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;">
         <div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${getTextColor(p95)};margin-top:3px;">${Math.round(p95)}</div></div>
         <div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${getTextColor(p99)};margin-top:3px;">${Math.round(p99)}</div></div>
@@ -347,59 +345,46 @@ function buildP95P99() {
 }
 
 function buildIssues() {
+  const issueMetrics = Object.keys(metricData).filter(m => 
+    !['sla', 'breach', 'pendency', 'p95', 'p99', 'target', 'mtd', 'ent', 'mid', 'smb', 'd-'].some(k => m.toLowerCase().includes(k))
+  );
+  
   const html = ['Images', '360', 'Video'].map(product => {
     const color = COLORS[product];
     const issues = [];
     
-    // Find all Top 5 Issues rows for this product
-    const topIssuesMetrics = Object.keys(allData).filter(m => 
-      m.startsWith('Remove BG') || m.startsWith('Tilt') || 
-      m.startsWith('roi_changes') || m.startsWith('Window') || 
-      m.startsWith('Wall') || m.startsWith('Placement') || 
-      m.startsWith('Exposure') || m.startsWith('Warping') || 
-      m.startsWith('CompleteCar') || m.startsWith('Portrait') || 
-      m.startsWith('Interior') || m.startsWith('Data') || 
-      m.startsWith('Spyne') || m.startsWith('Sold')
-    );
-    
-    topIssuesMetrics.forEach((metric, idx) => {
+    issueMetrics.forEach(metric => {
       const mtd = val(metric, product, 'MTD');
-      if (mtd && mtd > 0) {
+      if (mtd > 0) {
         issues.push({
           name: metric,
           mtd: mtd,
-          d1: val(metric, product, 'D-1') || 0,
-          d2: val(metric, product, 'D-2') || 0,
-          d3: val(metric, product, 'D-3') || 0,
-          d4: val(metric, product, 'D-4') || 0
+          d1: val(metric, product, 'D-1'),
+          d2: val(metric, product, 'D-2'),
+          d3: val(metric, product, 'D-3'),
+          d4: val(metric, product, 'D-4')
         });
       }
     });
     
     issues.sort((a, b) => b.mtd - a.mtd);
-    const topIssues = issues.slice(0, 5);
+    const top5 = issues.slice(0, 5);
     
-    if (topIssues.length === 0) {
-      return '';
-    }
+    if (!top5.length) return '';
     
-    const rows = topIssues.map((issue, idx) => {
+    const rows = top5.map((issue, idx) => {
       const rankBg = product === 'Images' ? '#FBF2DF' : '#FCEBEB';
       const rankColor = product === 'Images' ? '#C07C12' : '#D23B3A';
       const displayMtd = issue.mtd > 1000 ? (issue.mtd / 1000).toFixed(0) + 'k' : Math.round(issue.mtd);
       
-      return `<div class="irow">
-        <span class="irank" style="background:${rankBg};color:${rankColor};">${idx + 1}</span>
+      return `<div class="irow"><span class="irank" style="background:${rankBg};color:${rankColor};">${idx + 1}</span>
         <div class="itxt"><div class="ititle">${issue.name}</div><div class="idesc">MTD tracking</div></div>
         <div class="imtd">${displayMtd}</div>
         <div class="ichart"><div class="lc" data-pts="[${issue.d4}, ${issue.d3}, ${issue.d2}, ${issue.d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
       </div>`;
     }).join('');
     
-    return `<div class="card icard">
-      <div class="ihead"><span class="dot" style="background:${color.dot};"></span><span class="pname">${product}</span></div>
-      ${rows}
-    </div>`;
+    return `<div class="card icard"><div class="ihead"><span class="dot" style="background:${color.dot};"></span><span class="pname">${product}</span></div>${rows}</div>`;
   }).join('');
   
   document.getElementById('issuesGrid').innerHTML = html;
@@ -440,7 +425,7 @@ function buildCharts() {
     
     for (let i = 0; i < n; i++) {
       const hit = document.createElement('div');
-      hit.style.cssText = `position:absolute;top:0;bottom:0;left:${(i-0.5)/n*100}%;width:${100/n}%;`;
+      hit.style.cssText = `position:absolute;top:0;bottom:0;left:${(i-0.5)/n*100}%;width:${100/n}%;cursor:pointer;`;
       hit.addEventListener('mouseenter', () => {
         tip.style.left = X(i) + '%';
         tip.style.top = (Y(pts[i])/H*100) + '%';
