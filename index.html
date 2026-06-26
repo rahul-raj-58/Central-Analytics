@@ -1,419 +1,335 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delivery Dashboard</title>
+<title>Delivery Report</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
-body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;}
-.wrap{max-width:720px;margin:0 auto;padding:24px 16px 40px;}
-.header{background:linear-gradient(135deg,#6C4BD9,#5538C9);border-radius:16px;padding:22px 24px;position:relative;text-align:center;box-shadow:0 8px 24px rgba(85,56,201,.22);}
-.htitle{font-size:21px;font-weight:700;color:#fff;letter-spacing:-.3px;}
-.hsub{font-size:13px;color:#E5DEFA;margin-top:5px;}
-.htime{position:absolute;top:14px;right:18px;font-size:11px;color:#CFC4F5;}
-.cache-indicator{position:absolute;bottom:8px;left:18px;font-size:9px;color:#CFC4F5;cursor:pointer;}
-.loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;}
-.loading-spinner{background:white;border-radius:12px;padding:30px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);}
-.spinner{width:40px;height:40px;border:3px solid #E5E7EB;border-top-color:#6C4BD9;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 15px;}
-@keyframes spin{to{transform:rotate(360deg)}}
-.verdict{display:flex;gap:11px;align-items:flex-start;background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:12px;padding:13px 15px;margin:18px 0 4px;}
-.verdict .vi{color:#D23B3A;flex:none;}
-.verdict .vt{font-size:14px;color:#D23B3A;line-height:1.5;}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
-@media(max-width:600px){.grid{grid-template-columns:1fr;}}
-.card{background:#FFFFFF;border:1px solid #ECECF1;border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(20,25,40,.04),0 6px 18px rgba(20,25,40,.03);}
-.card-id{display:flex;align-items:center;gap:10px;}
-.pname{font-size:14px;font-weight:700;color:#1C2230;}
-.psub{font-size:11px;color:#9AA0AD;margin-top:1px;}
-.metric{display:flex;align-items:baseline;gap:8px;margin:12px 0 2px;}
-.big{font-size:30px;font-weight:800;letter-spacing:-1px;line-height:1;}
-.munit{font-size:11px;color:#646B7A;font-weight:600;}
-.badge{font-size:12px;font-weight:600;padding:2px 8px;border-radius:7px;}
-.pmeta{font-size:11px;color:#646B7A;margin-top:3px;}
-.card-foot{display:flex;gap:22px;margin-top:10px;padding-top:10px;border-top:1px solid #ECECF1;}
-.ftlbl{font-size:10px;color:#9AA0AD;text-transform:uppercase;}
-.ftval{font-size:15px;font-weight:700;color:#1C2230;margin-top:2px;}
-.ptcard{padding:14px 16px;}
-.ptl{color:#9AA0AD;font-weight:600;font-size:11px;}
-.segt{width:100%;border-collapse:collapse;margin-top:11px;font-size:11px;}
-.sgh,.svh{font-size:10px;color:#9AA0AD;font-weight:500;padding:0 4px 5px;}
+body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased;}
+.wrap{max-width:760px;margin:0 auto;padding:14px 14px 60px;}
+
+/* ---- Slim header ---- */
+.hbar{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px;}
+.htitle{font-size:19px;font-weight:900;color:#0F172A;letter-spacing:-.4px;}
+.hupd{font-size:10px;color:#9AA0AD;font-weight:500;}
+
+/* ---- Floating refresh (outside report) ---- */
+.refresh-fab{position:fixed;bottom:18px;right:18px;z-index:900;background:#6C4BD9;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;padding:11px 16px;border-radius:30px;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 6px 18px rgba(108,75,217,.4);transition:transform .15s,background .2s;}
+.refresh-fab:active{transform:scale(.95);}
+.refresh-fab:disabled{opacity:.7;cursor:default;}
+.refresh-fab svg{width:14px;height:14px;}
+
+.verdict{display:flex;gap:9px;align-items:flex-start;background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:11px;padding:11px 13px;margin:2px 0 6px;}
+.verdict .vi{color:#D23B3A;flex:none;margin-top:1px;}
+.verdict .vt{font-size:13px;color:#B23535;line-height:1.45;}
+
+.sect{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:22px 0 10px;}
+.sect-l{display:flex;align-items:center;gap:8px;}
+.sect-bar{width:4px;height:16px;border-radius:3px;background:#6C4BD9;}
+.sect-t{font-size:14px;font-weight:800;color:#1C2230;letter-spacing:-.1px;}
+.sect-note{font-size:10px;font-weight:600;color:#9AA0AD;text-transform:uppercase;letter-spacing:.04em;}
+
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+@media(max-width:600px){
+  .grid{grid-template-columns:1fr;gap:8px;}
+  .wrap{padding:12px 12px 80px;}
+  .sect{margin:18px 0 8px;}
+  .big{font-size:32px;}
+  .card{padding:12px 13px;}
+}
+
+/* ---- Product-tinted cards ---- */
+.card{border-radius:14px;padding:13px 14px;border:1px solid;border-left-width:5px;box-shadow:0 1px 2px rgba(20,25,40,.04);}
+.card-id{display:flex;align-items:center;gap:8px;}
+.pname{font-size:14px;font-weight:800;letter-spacing:-.2px;}
+.psub{font-size:10px;color:#9AA0AD;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
+.picon{display:inline-flex;width:30px;height:30px;border-radius:8px;align-items:center;justify-content:center;flex:none;}
+
+.metric{display:flex;align-items:baseline;gap:6px;margin:11px 0 1px;}
+.big{font-size:29px;font-weight:900;letter-spacing:-1px;line-height:1;}
+.munit{font-size:11px;color:#646B7A;font-weight:700;}
+
+.chart-cap{font-size:9px;font-weight:600;color:#AAB0BC;text-transform:uppercase;letter-spacing:.05em;margin:9px 0 2px;}
+.card-foot{display:flex;gap:18px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(20,25,40,.07);}
+.ftlbl{font-size:9px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
+.ftval{font-size:14px;font-weight:800;color:#1C2230;margin-top:1px;}
+
+.ptl{color:#9AA0AD;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.03em;}
+.segt{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;}
+.sgh,.svh{font-size:9px;color:#9AA0AD;font-weight:700;padding:0 3px 5px;text-transform:uppercase;letter-spacing:.03em;}
 .svh{text-align:right;}
-.sg{font-size:11px;color:#646B7A;padding:5px 4px;border-top:1px solid #ECECF1;}
-.sv{text-align:right;padding:5px 4px;border-top:1px solid #ECECF1;}
-.sv span{font-size:10px;font-weight:600;padding:2px 6px;border-radius:6px;display:inline-block;}
-.icard{padding:0;overflow:hidden;}
-.ihead{display:flex;align-items:center;gap:8px;padding:11px 15px;border-bottom:1px solid #ECECF1;background:#F8F8FA;}
-.irow{display:flex;align-items:center;gap:10px;padding:10px 15px;border-top:1px solid #ECECF1;font-size:12px;}
-.irank{width:20px;height:20px;flex:none;border-radius:50%;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;}
+.sg{font-size:11px;color:#646B7A;font-weight:600;padding:5px 3px;border-top:1px solid rgba(20,25,40,.06);}
+.sv{text-align:right;padding:5px 3px;border-top:1px solid rgba(20,25,40,.06);}
+.sv span{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;display:inline-block;}
+
+/* ---- Issues ---- */
+.icard{padding:0;overflow:hidden;border-radius:14px;border:1px solid;border-left-width:5px;}
+.ihead{display:flex;align-items:center;gap:7px;padding:10px 13px;border-bottom:1px solid rgba(20,25,40,.07);}
+.irow{display:flex;align-items:center;gap:9px;padding:9px 13px;border-top:1px solid rgba(20,25,40,.06);font-size:12px;}
+.irow:first-of-type{border-top:none;}
+.irank{width:19px;height:19px;flex:none;border-radius:50%;font-size:10px;font-weight:800;display:flex;align-items:center;justify-content:center;}
 .itxt{flex:1;min-width:0;}
-.ititle{font-size:12px;font-weight:600;color:#1C2230;}
-.idesc{font-size:11px;color:#9AA0AD;margin-top:1px;}
-.imtd{font-size:14px;font-weight:700;color:#1C2230;min-width:40px;text-align:right;}
-.ichart{width:56px;flex:none;}
+.ititle{font-size:12px;font-weight:700;color:#1C2230;line-height:1.3;}
+.imtd{font-size:14px;font-weight:800;color:#1C2230;min-width:34px;text-align:right;}
+.ichart{width:54px;flex:none;}
+
 .lc{position:relative;cursor:crosshair;}
-.lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:600;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);}
+.lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);}
 .lc-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1C2230;}
 .lc-cursor{position:absolute;width:7px;height:7px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);pointer-events:none;display:none;z-index:4;}
-.foot{margin-top:22px;padding-top:14px;border-top:1px solid #ECECF1;font-size:11px;color:#9AA0AD;line-height:1.6;}
-.cap-row{display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap;}
-.legend{font-size:11px;color:#646B7A;}
+
+.legend{font-size:10px;color:#646B7A;font-weight:600;white-space:nowrap;}
 .legend .ld{display:inline-block;width:8px;height:8px;border-radius:50%;vertical-align:middle;margin-right:3px;}
+.foot{margin-top:20px;padding-top:12px;border-top:1px solid #E4E6EC;font-size:10px;color:#9AA0AD;}
+
+.loading{position:fixed;inset:0;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;z-index:1000;}
+.loading-spinner{background:#fff;border-radius:12px;padding:26px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);}
+.spinner{width:36px;height:36px;border:3px solid #E5E7EB;border-top-color:#6C4BD9;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 13px;}
+@keyframes spin{to{transform:rotate(360deg)}}
 </style></head>
-<body><div class="wrap">
-  <div class="header">
-    <div class="htime" id="dateTime">—</div>
-    <div class="htitle">Delivery Dashboard</div>
-    <div class="hsub">Images · 360 · Video</div>
-    <div class="cache-indicator" id="cacheIndicator">Cached</div>
-    <button id="refreshBtn" onclick="hardRefresh()" title="Fetch fresh data from Google Sheets" style="position:absolute;bottom:10px;right:14px;background:rgba(255,255,255,0.18);border:1px solid rgba(255,255,255,0.35);color:#fff;font-size:11px;font-weight:600;padding:5px 11px;border-radius:20px;cursor:pointer;display:flex;align-items:center;gap:5px;letter-spacing:.2px;transition:background .2s;">
-      <svg id="refreshIcon" viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/></svg>
-      Refresh
-    </button>
+<body>
+<button class="refresh-fab" id="refreshBtn" onclick="hardRefresh()" title="Fetch fresh data from sheet">
+  <svg id="refreshIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/></svg>
+  <span id="refreshTxt">Refresh</span>
+</button>
+
+<div class="wrap">
+  <div class="hbar">
+    <div class="htitle" id="reportTitle">Delivery Report</div>
+    <div class="hupd">Updated <span id="lastUpdate">—</span> · <span id="cacheState">cached</span></div>
   </div>
 
   <div id="contentContainer" style="display:none;">
     <div id="verdict"></div>
-    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">SLA Breach · MTD + 4-day trend</span></div>
+
+    <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">SLA Breach</span></div><span class="sect-note">% · last 5 days</span></div>
     <div class="grid" id="slaGrid"></div>
-    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Pendency · VINs > 6 hrs / overall</span></div>
+
+    <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">Pendency</span></div><span class="sect-note">count · last 5 days</span></div>
     <div class="grid" id="pendencyGrid"></div>
-    <div class="cap-row"><div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Delivery time · P95 / P99 (hrs)</span></div>
-    <span class="legend"><span class="ld" style="background:#16895C;"></span>< 24h &nbsp;<span class="ld" style="background:#C07C12;"></span>24–72h &nbsp;<span class="ld" style="background:#D23B3A;"></span>> 72h</span></div></div>
+
+    <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">Delivery Time</span></div>
+      <span class="legend"><span class="ld" style="background:#1D9E75;"></span>&lt;24h&nbsp; <span class="ld" style="background:#E0A219;"></span>24–72h&nbsp; <span class="ld" style="background:#E2504F;"></span>&gt;72h</span>
+    </div>
     <div class="grid" id="p95Grid"></div>
-    <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Top Issues · by Product · 4-day trend</span></div>
+
+    <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">Top Issues</span></div><span class="sect-note">MTD · 5-day trend</span></div>
     <div class="grid" id="issuesGrid"></div>
-    <div class="foot">Generated from Central Analytics. <strong>Cached data</strong> • Last updated: <span id="lastUpdate">—</span></div>
+
+    <div class="foot">Generated from Central Analytics · trend charts show the last 5 days (D-5 → D-1)</div>
   </div>
 
   <div id="loadingContainer" class="loading">
-    <div class="loading-spinner">
-      <div class="spinner"></div>
-      <p style="margin:0;color:#1C2230;font-weight:600;">Loading Dashboard</p>
-      <p id="loadingStatus" style="margin:8px 0 0;font-size:12px;color:#64748B;">Fetching data...</p>
-    </div>
+    <div class="loading-spinner"><div class="spinner"></div><p style="margin:0;color:#1C2230;font-weight:700;font-size:14px;">Loading Report</p><p id="loadingStatus" style="margin:7px 0 0;font-size:12px;color:#64748B;">Fetching data…</p></div>
   </div>
 </div>
 
 <script>
-const CACHE_KEY = 'delivery_dashboard_data';
-const CACHE_TIME = 'delivery_dashboard_time';
-const CACHE_HOURS = 6;
+const CACHE_KEY='delivery_dashboard_data', CACHE_TIME='delivery_dashboard_time', CACHE_HOURS=6;
 
-const COLORS = {
-  Images: {icon:'#EEEAFB',brand:'#6C4BD9',metric:'#C07C12',dot:'#6C4BD9'},
-  '360': {icon:'#E1F3EC',brand:'#12936A',metric:'#D23B3A',dot:'#12936A'},
-  Video: {icon:'#E6F0FE',brand:'#2D7FF9',metric:'#D23B3A',dot:'#2D7FF9'}
+/* Product theming — full-card tint + accent for instant top-to-bottom scanning */
+const THEME={
+  Images:{accent:'#6C4BD9', bg:'#F5F2FE', border:'#E3DBFA', iconBg:'#E7E0FB', name:'#5B3FC4'},
+  '360' :{accent:'#12936A', bg:'#EEF8F3', border:'#D2EDE1', iconBg:'#DCF1E8', name:'#0E7A57'},
+  Video :{accent:'#2D7FF9', bg:'#EFF5FE', border:'#D6E6FC', iconBg:'#DEEBFE', name:'#1F6BE0'}
+};
+const ICONS={
+  Images:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg>',
+  '360':'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg>',
+  Video:'<svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
 };
 
-const ICONS = {
-  Images: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="3"/><circle cx="8.5" cy="9" r="1.6"/><path d="M21 16l-5-5L5 21"/></svg>',
-  '360': '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.6-6.4"/><polyline points="21 3.5 21 8 16.5 8"/><ellipse cx="12" cy="13.5" rx="5.5" ry="2.4"/></svg>',
-  Video: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
-};
+/* Performance tone → line color. Good=green, Okay=amber, Bad=red */
+const TONE={green:'#1D9E75', amber:'#E0A219', red:'#E2504F'};
+function slaTone(v){ return v<30?'green':v<=50?'amber':'red'; }
+function trendTone(pts){
+  const a=pts.find(x=>x>0)??pts[0], b=pts[pts.length-1];
+  if(!a){ return b>0?'amber':'green'; }
+  if(b<=a*0.95) return 'green';
+  if(b>=a*1.05) return 'red';
+  return 'amber';
+}
 
-let data = {};
+let data={};
 
-function parseCSVAdvanced(line) {
-  // Handle CSV with proper quote handling and comma support in quoted strings
-  const result = [];
-  let current = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    const nextChar = line[i + 1];
-    
-    if (char === '"') {
-      // Check for escaped quote
-      if (inQuotes && nextChar === '"') {
-        current += '"';
-        i++; // Skip next quote
-      } else {
-        // Toggle quote mode
-        inQuotes = !inQuotes;
+function parseCSVAdvanced(line){
+  const out=[]; let cur='', q=false;
+  for(let i=0;i<line.length;i++){const ch=line[i],nx=line[i+1];
+    if(ch==='"'){ if(q&&nx==='"'){cur+='"';i++;} else q=!q; }
+    else if(ch===','&&!q){ out.push(cur.trim()); cur=''; }
+    else cur+=ch;
+  }
+  out.push(cur.trim());
+  return out.map(c=>(c.startsWith('"')&&c.endsWith('"'))?c.slice(1,-1):c);
+}
+function parseNumber(v){ if(!v)return 0; v=String(v).trim(); if(v===''||v==='-')return 0; v=v.replace(/,/g,'').replace(/%/g,''); const n=parseFloat(v); return isNaN(n)?0:n; }
+
+async function loadDashboard(){
+  const c=getCache();
+  if(c){ data=c; render(); setState('cached'); }
+  else { await fetchData(); setCache(data); render(); setState('updated'); }
+  document.getElementById('loadingContainer').style.display='none';
+  document.getElementById('contentContainer').style.display='block';
+}
+function setState(s){ document.getElementById('cacheState').textContent=s; }
+function getCache(){ const c=localStorage.getItem(CACHE_KEY),t=localStorage.getItem(CACHE_TIME); if(!c||!t)return null; if((Date.now()-parseInt(t))/(36e5)>CACHE_HOURS)return null; return JSON.parse(c); }
+function setCache(o){ localStorage.setItem(CACHE_KEY,JSON.stringify(o)); localStorage.setItem(CACHE_TIME,Date.now().toString()); }
+
+async function fetchData(){
+  const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/pub?gid=2034010422&single=true&output=csv';
+  const res=await fetch(url); const csv=await res.text();
+  const lines=csv.split('\n').filter(l=>l.trim());
+  data={'SLA Breach%':{},'Pendency':{},'P95 Delivery Time(Hrs)':{},'P99 Delivery Time(Hrs)':{},issues:{}};
+  const header=parseCSVAdvanced(lines[0]); const EXPECTED=header.length;
+  const colNames=['Target','MTD','ENT','MID','SMB','D-1','D-2','D-3','D-4','D-5','M-1','M-2'];
+  let product='';
+  for(let i=1;i<lines.length;i++){
+    const raw=parseCSVAdvanced(lines[i]);
+    if(!raw[1]&&!raw[0]) continue;
+    if(raw[0]) product=raw[0].trim();
+    const metric=raw[1]?raw[1].trim():''; if(!product||!metric) continue;
+    let cells=[...raw]; const extra=cells.length-EXPECTED;
+    if(extra>0){ // un-split comma numbers (e.g. 1,405 → "1","405")
+      let vals=cells.slice(2), merged=0;
+      for(let k=0;k<vals.length-1&&merged<extra;k++){
+        const a=(vals[k]||'').trim(), b=(vals[k+1]||'').trim();
+        if(/^\d{1,3}$/.test(a)&&/^\d{3}$/.test(b)){ vals.splice(k,2,a+b); merged++; k--; }
       }
-    } else if (char === ',' && !inQuotes) {
-      // End of field
-      result.push(current.trim());
-      current = '';
-    } else {
-      current += char;
+      cells=[cells[0],cells[1],...vals];
     }
-  }
-  
-  // Add last field
-  result.push(current.trim());
-  
-  // Remove outer quotes from values
-  return result.map(c => {
-    if (c.startsWith('"') && c.endsWith('"')) {
-      return c.slice(1, -1);
-    }
-    return c;
-  });
-}
-
-function parseNumber(val) {
-  if (!val) return 0;
-  val = String(val).trim();
-  if (val === '' || val === '-') return 0;
-  val = val.replace(/,/g, '');
-  const num = parseFloat(val);
-  return isNaN(num) ? 0 : num;
-}
-
-async function loadDashboard() {
-  const cached = getCache();
-  if (cached) {
-    data = cached;
-    render();
-    document.getElementById('cacheIndicator').textContent = 'Cached';
-  } else {
-    await fetchData();
-    setCache(data);
-    render();
-    document.getElementById('cacheIndicator').textContent = 'Updated';
-  }
-  document.getElementById('loadingContainer').style.display = 'none';
-  document.getElementById('contentContainer').style.display = 'block';
-}
-
-function getCache() {
-  const cached = localStorage.getItem(CACHE_KEY);
-  const time = localStorage.getItem(CACHE_TIME);
-  if (!cached || !time) return null;
-  const age = (Date.now() - parseInt(time)) / (1000 * 60 * 60);
-  if (age > CACHE_HOURS) return null;
-  return JSON.parse(cached);
-}
-
-function setCache(obj) {
-  localStorage.setItem(CACHE_KEY, JSON.stringify(obj));
-  localStorage.setItem(CACHE_TIME, Date.now().toString());
-}
-
-async function fetchData() {
-  const url = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/pub?gid=2034010422&single=true&output=csv';
-  const res = await fetch(url);
-  const csv = await res.text();
-  const lines = csv.split('\n').filter(l => l.trim());
-  
-  data = {
-    'SLA Breach%': {},
-    'Pendency': {},
-    'P95 Delivery Time(Hrs)': {},
-    'P99 Delivery Time(Hrs)': {},
-    issues: {}
-  };
-
-  // Read header row to know exact expected column count
-  const headerCells = parseCSVAdvanced(lines[0]);
-  const EXPECTED_TOTAL = headerCells.length; // e.g. 14 cols total
-
-  let product = '';
-  const colNames = ['Target','MTD','ENT','MID','SMB','D-1','D-2','D-3','D-4','D-5','M-1','M-2'];
-
-  for (let i = 1; i < lines.length; i++) {
-    const rawCells = parseCSVAdvanced(lines[i]);
-    if (!rawCells[1] && !rawCells[0]) continue;
-
-    if (rawCells[0]) product = rawCells[0].trim();
-    const metric = rawCells[1] ? rawCells[1].trim() : '';
-    if (!product || !metric) continue;
-
-    // FIX: When rawCells has MORE cells than expected, it means one or more
-    // numbers with commas were split (e.g. "1,405" → two cells "1","405").
-    // We reconstruct the correct cells by merging from right-to-left
-    // so that the total count matches EXPECTED_TOTAL.
-    let cells = [...rawCells];
-    const extra = cells.length - EXPECTED_TOTAL;
-
-    if (extra > 0) {
-      // Work backwards through value columns (index 2 onwards) merging pairs
-      // A split number looks like: left is 1-3 digits, right is exactly 3 digits
-      let merged = cells.slice(2); // just the value portion
-      let mergeCount = 0;
-
-      for (let k = 0; k < merged.length - 1 && mergeCount < extra; k++) {
-        const a = (merged[k] || '').trim();
-        const b = (merged[k+1] || '').trim();
-        // Only merge if a is 1-3 pure digits AND b is exactly 3 pure digits
-        if (/^\d{1,3}$/.test(a) && /^\d{3}$/.test(b)) {
-          merged.splice(k, 2, a + b); // replace two cells with merged value
-          mergeCount++;
-          k--; // re-check this position
-        }
-      }
-
-      cells = [cells[0], cells[1], ...merged];
-    }
-
-    const vals = {};
-    for (let j = 0; j < colNames.length; j++) {
-      vals[colNames[j]] = parseNumber(cells[2 + j]);
-    }
-
-    if (metric.includes('SLA')) {
-      data['SLA Breach%'][product] = vals;
-    } else if (metric.includes('Pendency')) {
-      data['Pendency'][product] = vals;
-    } else if (metric.includes('P95')) {
-      data['P95 Delivery Time(Hrs)'][product] = vals;
-    } else if (metric.includes('P99')) {
-      data['P99 Delivery Time(Hrs)'][product] = vals;
-    } else {
-      if (!data.issues[product]) data.issues[product] = [];
-      data.issues[product].push({name: metric, vals});
-    }
+    const v={}; for(let j=0;j<colNames.length;j++) v[colNames[j]]=parseNumber(cells[2+j]);
+    if(metric.includes('SLA')) data['SLA Breach%'][product]=v;
+    else if(metric.includes('Pendency')) data['Pendency'][product]=v;
+    else if(metric.includes('P95')) data['P95 Delivery Time(Hrs)'][product]=v;
+    else if(metric.includes('P99')) data['P99 Delivery Time(Hrs)'][product]=v;
+    else { (data.issues[product]=data.issues[product]||[]).push({name:metric,vals:v}); }
   }
 }
 
-function render() {
-  buildVerdict();
-  buildSLA();
-  buildPendency();
-  buildP95P99();
-  buildIssues();
-  updateDate();
-  buildCharts();
+function v(metric,p,c){ return data[metric]?.[p]?.[c]??0; }
+function fmt(n){ if(n>=1000)return (n/1000).toFixed(1).replace(/\.0$/,'')+'k'; return Math.round(n); }
+function days5(metric,p){ return [v(metric,p,'D-5'),v(metric,p,'D-4'),v(metric,p,'D-3'),v(metric,p,'D-2'),v(metric,p,'D-1')]; }
+const DAY_LABELS='["D-5","D-4","D-3","D-2","D-1"]';
+
+function render(){ buildTitle(); buildVerdict(); buildSLA(); buildPendency(); buildP95(); buildIssues(); buildCharts(); }
+
+function buildTitle(){
+  const now=new Date();
+  document.getElementById('reportTitle').textContent='Delivery Report · '+now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
+  document.getElementById('lastUpdate').textContent=now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
 }
 
-function v(metric, product, col) {
-  return data[metric]?.[product]?.[col] ?? 0;
+function buildVerdict(){
+  const s={Images:v('SLA Breach%','Images','MTD'),'360':v('SLA Breach%','360','MTD'),Video:v('SLA Breach%','Video','MTD')};
+  document.getElementById('verdict').innerHTML='<div class="verdict"><span class="vi"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class="vt"><b>Health: Mixed.</b> Images '+Math.round(s.Images)+'% SLA · 360 '+Math.round(s['360'])+'% · Video '+Math.round(s.Video)+'%. 360 &amp; Video need attention.</div></div>';
 }
 
-function formatNum(n) {
-  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-  return Math.round(n);
+function card(p,inner,cls){
+  const t=THEME[p];
+  return '<div class="'+(cls||'card')+'" style="background:'+t.bg+';border-color:'+t.border+';border-left-color:'+t.accent+';">'+inner+'</div>';
+}
+function head(p,sub){
+  const t=THEME[p];
+  return '<div class="card-id"><span class="picon" style="background:'+t.iconBg+';color:'+t.accent+';">'+ICONS[p]+'</span><div><div class="pname" style="color:'+t.name+';">'+p+'</div>'+(sub?'<div class="psub">'+sub+'</div>':'')+'</div></div>';
 }
 
-function buildVerdict() {
-  const sla = {Images:v('SLA Breach%','Images','MTD'),'360':v('SLA Breach%','360','MTD'),Video:v('SLA Breach%','Video','MTD')};
-  document.getElementById('verdict').innerHTML = `<div class="verdict"><span class="vi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class="vt"><b>Health Status: Mixed.</b> Images (${Math.round(sla.Images)}% SLA) on track · 360 (${Math.round(sla['360'])}% SLA) needs attention · Video (${Math.round(sla.Video)}% SLA) at risk.</div></div>`;
-}
-
-function buildSLA() {
-  const html = ['Images','360','Video'].map(p => {
-    const m=v('SLA Breach%',p,'MTD'),d1=v('SLA Breach%',p,'D-1'),d2=v('SLA Breach%',p,'D-2'),d3=v('SLA Breach%',p,'D-3'),d4=v('SLA Breach%',p,'D-4'),m1=v('SLA Breach%',p,'M-1'),m2=v('SLA Breach%',p,'M-2');
-    const c=COLORS[p],i=ICONS[p];
-    return `<div class="card"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${c.icon};color:${c.brand};align-items:center;justify-content:center;">${i}</span><div><div class="pname">${p}</div><div class="psub">SLA breach</div></div></div><div class="metric"><span class="big" style="color:${c.metric};">${Math.round(m)}</span><span class="munit">%</span></div><div class="lc" data-pts="[${d4},${d3},${d2},${d1}]" data-labels='["D-4","D-3","D-2","D-1"]' data-unit="%" style="width:100%;height:48px;"></div><div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">${Math.round(m1)}%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">${Math.round(m2)}%</div></div></div></div>`;
+function buildSLA(){
+  document.getElementById('slaGrid').innerHTML=['Images','360','Video'].map(p=>{
+    const m=v('SLA Breach%',p,'MTD'),m1=v('SLA Breach%',p,'M-1'),m2=v('SLA Breach%',p,'M-2');
+    const pts=days5('SLA Breach%',p), tone=slaTone(m);
+    const inner=head(p,'SLA breach')
+      +'<div class="metric"><span class="big" style="color:'+TONE[tone]+';">'+Math.round(m)+'</span><span class="munit">% MTD</span></div>'
+      +'<div class="chart-cap">Last 5 days</div>'
+      +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-unit="%" data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
+      +'<div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">'+Math.round(m1)+'%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">'+Math.round(m2)+'%</div></div></div>';
+    return card(p,inner);
   }).join('');
-  document.getElementById('slaGrid').innerHTML = html;
 }
 
-function buildPendency() {
-  const html = ['Images','360','Video'].map(p => {
-    const m=v('Pendency',p,'MTD'),d1=v('Pendency',p,'D-1'),d2=v('Pendency',p,'D-2'),d3=v('Pendency',p,'D-3'),d4=v('Pendency',p,'D-4');
-    const m1=v('Pendency',p,'M-1'),m2=v('Pendency',p,'M-2');
-    const c=COLORS[p],i=ICONS[p];
-    return `<div class="card"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${c.icon};color:${c.brand};align-items:center;justify-content:center;">${i}</span><div><div class="pname">${p}</div><div class="psub">Pendency</div></div></div><div class="metric"><span class="big" style="color:${c.metric};">${Math.round(m)}</span></div><div class="lc" data-pts="[${d4},${d3},${d2},${d1}]" data-labels='["D-4","D-3","D-2","D-1"]' style="width:100%;height:48px;"></div><div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">${Math.round(m1)}</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">${Math.round(m2)}</div></div></div></div>`;
+function buildPendency(){
+  document.getElementById('pendencyGrid').innerHTML=['Images','360','Video'].map(p=>{
+    const m=v('Pendency',p,'MTD'),m1=v('Pendency',p,'M-1'),m2=v('Pendency',p,'M-2');
+    const pts=days5('Pendency',p), tone=trendTone(pts);
+    const inner=head(p,'Pendency')
+      +'<div class="metric"><span class="big" style="color:'+TONE[tone]+';">'+fmt(m)+'</span><span class="munit">MTD</span></div>'
+      +'<div class="chart-cap">Last 5 days</div>'
+      +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
+      +'<div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">'+fmt(m1)+'</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">'+fmt(m2)+'</div></div></div>';
+    return card(p,inner);
   }).join('');
-  document.getElementById('pendencyGrid').innerHTML = html;
 }
 
-function buildP95P99() {
-  const html = ['Images','360','Video'].map(p => {
+function buildP95(){
+  const tc=v=>v<24?'#1D9E75':v<=72?'#E0A219':'#E2504F';
+  const bgc=v=>v<24?'#E4F4EC':v<=72?'#FBF2DF':'#FCEBEB';
+  document.getElementById('p95Grid').innerHTML=['Images','360','Video'].map(p=>{
     const p95=v('P95 Delivery Time(Hrs)',p,'MTD'),p99=v('P99 Delivery Time(Hrs)',p,'MTD');
-    const e95=v('P95 Delivery Time(Hrs)',p,'ENT'),e99=v('P99 Delivery Time(Hrs)',p,'ENT');
-    const m95=v('P95 Delivery Time(Hrs)',p,'MID'),m99=v('P99 Delivery Time(Hrs)',p,'MID');
-    const s95=v('P95 Delivery Time(Hrs)',p,'SMB'),s99=v('P99 Delivery Time(Hrs)',p,'SMB');
-    const c=COLORS[p],i=ICONS[p];
-    const getC=(v)=>v<24?'#E4F4EC':v<72?'#FBF2DF':'#FCEBEB';
-    const getT=(v)=>v<24?'#16895C':v<72?'#C07C12':'#D23B3A';
-    return `<div class="card ptcard"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${c.icon};color:${c.brand};align-items:center;justify-content:center;">${i}</span><div class="pname" style="line-height:32px;">${p}</div></div><div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;"><div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${getT(p95)};margin-top:3px;">${Math.round(p95)}</div></div><div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${getT(p99)};margin-top:3px;">${Math.round(p99)}</div></div></div><table class="segt"><tr><td class="sgh">Segment</td><td class="svh">P95</td><td class="svh">P99</td></tr><tr><td class="sg">ENT</td><td class="sv"><span style="background:${getC(e95)};color:${getT(e95)};">${Math.round(e95)}</span></td><td class="sv"><span style="background:${getC(e99)};color:${getT(e99)};">${Math.round(e99)}</span></td></tr><tr><td class="sg">MID</td><td class="sv"><span style="background:${getC(m95)};color:${getT(m95)};">${Math.round(m95)}</span></td><td class="sv"><span style="background:${getC(m99)};color:${getT(m99)};">${Math.round(m99)}</span></td></tr><tr><td class="sg">SMB</td><td class="sv"><span style="background:${getC(s95)};color:${getT(s95)};">${Math.round(s95)}</span></td><td class="sv"><span style="background:${getC(s99)};color:${getT(s99)};">${Math.round(s99)}</span></td></tr></table></div>`;
+    const e5=v('P95 Delivery Time(Hrs)',p,'ENT'),e9=v('P99 Delivery Time(Hrs)',p,'ENT');
+    const m5=v('P95 Delivery Time(Hrs)',p,'MID'),m9=v('P99 Delivery Time(Hrs)',p,'MID');
+    const s5=v('P95 Delivery Time(Hrs)',p,'SMB'),s9=v('P99 Delivery Time(Hrs)',p,'SMB');
+    const inner=head(p,'')
+      +'<div style="display:flex;gap:18px;margin:9px 0 0;padding-top:9px;border-top:1px solid rgba(20,25,40,.07);"><div><div class="ptl">P95</div><div style="font-size:17px;font-weight:800;color:'+tc(p95)+';margin-top:2px;">'+fmt(p95)+'</div></div><div><div class="ptl">P99</div><div style="font-size:17px;font-weight:800;color:'+tc(p99)+';margin-top:2px;">'+fmt(p99)+'</div></div></div>'
+      +'<table class="segt"><tr><td class="sgh">Seg</td><td class="svh">P95</td><td class="svh">P99</td></tr>'
+      +'<tr><td class="sg">ENT</td><td class="sv"><span style="background:'+bgc(e5)+';color:'+tc(e5)+';">'+fmt(e5)+'</span></td><td class="sv"><span style="background:'+bgc(e9)+';color:'+tc(e9)+';">'+fmt(e9)+'</span></td></tr>'
+      +'<tr><td class="sg">MID</td><td class="sv"><span style="background:'+bgc(m5)+';color:'+tc(m5)+';">'+fmt(m5)+'</span></td><td class="sv"><span style="background:'+bgc(m9)+';color:'+tc(m9)+';">'+fmt(m9)+'</span></td></tr>'
+      +'<tr><td class="sg">SMB</td><td class="sv"><span style="background:'+bgc(s5)+';color:'+tc(s5)+';">'+fmt(s5)+'</span></td><td class="sv"><span style="background:'+bgc(s9)+';color:'+tc(s9)+';">'+fmt(s9)+'</span></td></tr></table>';
+    return card(p,inner,'card');
   }).join('');
-  document.getElementById('p95Grid').innerHTML = html;
 }
 
-function buildIssues() {
-  const html = ['Images','360','Video'].map(p => {
-    const c=COLORS[p];
-    const issues=(data.issues[p]||[]).map(iss=>({name:iss.name,mtd:iss.vals.MTD,d1:iss.vals['D-1'],d2:iss.vals['D-2'],d3:iss.vals['D-3'],d4:iss.vals['D-4']})).sort((a,b)=>b.mtd-a.mtd).slice(0,5);
-    if(!issues.length)return'';
-    const rows=issues.map((iss,idx)=>{const rb=p==='Images'?'#FBF2DF':'#FCEBEB';const rc=p==='Images'?'#C07C12':'#D23B3A';const dmtd=formatNum(iss.mtd);return`<div class="irow"><span class="irank" style="background:${rb};color:${rc};">${idx+1}</span><div class="itxt"><div class="ititle">${iss.name}</div><div class="idesc">MTD tracking</div></div><div class="imtd">${dmtd}</div><div class="ichart"><div class="lc" data-pts="[${iss.d4},${iss.d3},${iss.d2},${iss.d1}]" data-labels='["D-4","D-3","D-2","D-1"]' style="width:100%;height:28px;"></div></div></div>`;}).join('');
-    return`<div class="card icard"><div class="ihead"><span style="width:9px;height:9px;border-radius:50%;background:${c.dot};display:inline-block;"></span><span class="pname">${p}</span></div>${rows}</div>`;
+function buildIssues(){
+  document.getElementById('issuesGrid').innerHTML=['Images','360','Video'].map(p=>{
+    const t=THEME[p];
+    const issues=(data.issues[p]||[]).map(x=>({name:x.name,mtd:x.vals.MTD,pts:[x.vals['D-5'],x.vals['D-4'],x.vals['D-3'],x.vals['D-2'],x.vals['D-1']]}))
+      .sort((a,b)=>b.mtd-a.mtd).slice(0,5);
+    if(!issues.length) return '';
+    const rows=issues.map((iss,idx)=>{
+      const tone=trendTone(iss.pts);
+      return '<div class="irow"><span class="irank" style="background:'+t.iconBg+';color:'+t.accent+';">'+(idx+1)+'</span><div class="itxt"><div class="ititle">'+iss.name+'</div></div><div class="imtd">'+fmt(iss.mtd)+'</div><div class="ichart"><div class="lc" data-pts="['+iss.pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:26px;"></div></div></div>';
+    }).join('');
+    const inner='<div class="ihead"><span class="picon" style="width:24px;height:24px;background:'+t.iconBg+';color:'+t.accent+';">'+ICONS[p]+'</span><span class="pname" style="color:'+t.name+';">'+p+'</span></div>'+rows;
+    return '<div class="icard" style="background:'+t.bg+';border-color:'+t.border+';border-left-color:'+t.accent+';">'+inner+'</div>';
   }).join('');
-  document.getElementById('issuesGrid').innerHTML = html;
 }
 
-function buildCharts() {
-  document.querySelectorAll('.lc').forEach(el => {
+function buildCharts(){
+  document.querySelectorAll('.lc').forEach(el=>{
     const pts=JSON.parse(el.getAttribute('data-pts'));
     const labels=JSON.parse(el.getAttribute('data-labels'));
     const unit=el.getAttribute('data-unit')||'';
+    const tone=el.getAttribute('data-tone')||'red';
+    const col=TONE[tone]||'#E2504F';
     const n=pts.length,mn=Math.min(...pts),mx=Math.max(...pts),rng=(mx-mn)||1;
-    const col=pts[n-1]>=pts[0]?'#E2504F':'#1D9E75';
     const W=100,H=40,pX=3,pT=6,pB=7;
     const X=i=>pX+i*(W-2*pX)/(n-1);
-    const Y=v=>(H-pB)-((v-mn)/rng)*((H-pB)-pT);
-    const lp=pts.map((v,i)=>`${X(i).toFixed(2)},${Y(v).toFixed(2)}`);
-    const area=`M${X(0).toFixed(2)},${H-pB} L${lp.join(' L')} L${X(n-1).toFixed(2)},${H-pB} Z`;
+    const Y=val=>(H-pB)-((val-mn)/rng)*((H-pB)-pT);
+    const lp=pts.map((val,i)=>X(i).toFixed(2)+','+Y(val).toFixed(2));
+    const area='M'+X(0).toFixed(2)+','+(H-pB)+' L'+lp.join(' L')+' L'+X(n-1).toFixed(2)+','+(H-pB)+' Z';
     const gid='g'+Math.random().toString(36).slice(2,9);
-    const dots=pts.map((v,i)=>`<circle cx="${X(i).toFixed(2)}" cy="${Y(v).toFixed(2)}" r="1.3" fill="${col}"/>`).join('');
-    const svg=`<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;"><defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs><path d="${area}" fill="url(#${gid})"/><polyline points="${lp.join(' ')}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>${dots}</svg>`;
-    el.innerHTML=svg;
+    const dots=pts.map((val,i)=>'<circle cx="'+X(i).toFixed(2)+'" cy="'+Y(val).toFixed(2)+'" r="1.3" fill="'+col+'"/>').join('');
+    el.innerHTML='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;"><defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.22"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs><path d="'+area+'" fill="url(#'+gid+')"/><polyline points="'+lp.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="1.7" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+dots+'</svg>';
     const tip=document.createElement('div');tip.className='lc-tip';
     const cur=document.createElement('div');cur.className='lc-cursor';cur.style.background=col;
     el.appendChild(tip);el.appendChild(cur);
-    for(let i=0;i<n;i++){const hit=document.createElement('div');hit.style.cssText=`position:absolute;top:0;bottom:0;left:${(i-0.5)/n*100}%;width:${100/n}%;cursor:pointer;`;hit.addEventListener('mouseenter',()=>{tip.style.left=X(i)+'%';tip.style.top=(Y(pts[i])/H*100)+'%';tip.style.display='block';tip.textContent=`${labels[i]} · ${Math.round(pts[i])}${unit}`;cur.style.left=X(i)+'%';cur.style.top=(Y(pts[i])/H*100)+'%';cur.style.display='block';});el.appendChild(hit);}
+    for(let i=0;i<n;i++){const hit=document.createElement('div');hit.style.cssText='position:absolute;top:0;bottom:0;left:'+((i-0.5)/n*100)+'%;width:'+(100/n)+'%;cursor:pointer;';
+      hit.addEventListener('mouseenter',()=>{tip.style.left=X(i)+'%';tip.style.top=(Y(pts[i])/H*100)+'%';tip.style.display='block';tip.textContent=labels[i]+' · '+fmt(pts[i])+unit;cur.style.left=X(i)+'%';cur.style.top=(Y(pts[i])/H*100)+'%';cur.style.display='block';});
+      el.appendChild(hit);}
     el.addEventListener('mouseleave',()=>{tip.style.display='none';cur.style.display='none';});
   });
 }
 
-function updateDate() {
-  const now=new Date();
-  document.getElementById('dateTime').textContent=now.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
-  document.getElementById('lastUpdate').textContent=now.toLocaleTimeString();
+async function hardRefresh(){
+  const btn=document.getElementById('refreshBtn'),icon=document.getElementById('refreshIcon'),txt=document.getElementById('refreshTxt');
+  btn.disabled=true; icon.style.animation='spin .7s linear infinite'; txt.textContent='Refreshing…';
+  document.getElementById('loadingContainer').style.display='flex';
+  document.getElementById('contentContainer').style.display='none';
+  document.getElementById('loadingStatus').textContent='Fetching fresh data from sheet…';
+  localStorage.removeItem(CACHE_KEY); localStorage.removeItem(CACHE_TIME);
+  try{ await fetchData(); setCache(data); render(); setState('updated'); }
+  catch(e){ const c=getCache(); if(c){data=c;render();} setState('error'); }
+  document.getElementById('loadingContainer').style.display='none';
+  document.getElementById('contentContainer').style.display='block';
+  btn.disabled=false; icon.style.animation=''; txt.textContent='Refresh';
 }
-
-async function hardRefresh() {
-  const btn = document.getElementById('refreshBtn');
-  const icon = document.getElementById('refreshIcon');
-  const status = document.getElementById('loadingStatus');
-  
-  // Animate button
-  btn.disabled = true;
-  btn.style.background = 'rgba(255,255,255,0.30)';
-  icon.style.animation = 'spin .7s linear infinite';
-  btn.childNodes[1].textContent = ' Refreshing...';
-  
-  // Show loading overlay
-  document.getElementById('loadingContainer').style.display = 'flex';
-  document.getElementById('contentContainer').style.display = 'none';
-  if (status) status.textContent = 'Fetching fresh data from Google Sheets...';
-  
-  // Clear cache
-  localStorage.removeItem(CACHE_KEY);
-  localStorage.removeItem(CACHE_TIME);
-  document.getElementById('cacheIndicator').textContent = 'Updating...';
-  
-  try {
-    await fetchData();
-    setCache(data);
-    render();
-    document.getElementById('cacheIndicator').textContent = 'Updated';
-  } catch(e) {
-    document.getElementById('cacheIndicator').textContent = 'Error - using cache';
-    const prev = getCache();
-    if (prev) { data = prev; render(); }
-  }
-  
-  // Hide loading, show content
-  document.getElementById('loadingContainer').style.display = 'none';
-  document.getElementById('contentContainer').style.display = 'block';
-  
-  // Reset button
-  btn.disabled = false;
-  btn.style.background = 'rgba(255,255,255,0.18)';
-  icon.style.animation = '';
-  btn.childNodes[1].textContent = ' Refresh';
-}
-
-document.getElementById('cacheIndicator').addEventListener('click', function() {
-  localStorage.removeItem(CACHE_KEY);
-  localStorage.removeItem(CACHE_TIME);
-  document.getElementById('cacheIndicator').textContent = 'Cache cleared!';
-  setTimeout(() => { location.reload(); }, 1000);
-});
 
 document.addEventListener('DOMContentLoaded', loadDashboard);
 </script>
