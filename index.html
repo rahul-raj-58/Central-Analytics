@@ -10,7 +10,7 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .htitle{font-size:21px;font-weight:700;color:#fff;letter-spacing:-.3px;}
 .hsub{font-size:13px;color:#E5DEFA;margin-top:5px;}
 .htime{position:absolute;top:14px;right:18px;font-size:11px;color:#CFC4F5;}
-.cache-indicator{position:absolute;bottom:8px;left:18px;font-size:9px;color:#CFC4F5;}
+.cache-indicator{position:absolute;bottom:8px;left:18px;font-size:9px;color:#CFC4F5;cursor:pointer;}
 .loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;}
 .loading-spinner{background:white;border-radius:12px;padding:30px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);}
 .spinner{width:40px;height:40px;border:3px solid #E5E7EB;border-top-color:#6C4BD9;border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 15px;}
@@ -63,7 +63,7 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div class="htime" id="dateTime">—</div>
     <div class="htitle">Delivery Dashboard</div>
     <div class="hsub">Images · 360 · Video</div>
-    <div class="cache-indicator" id="cacheIndicator">Cached</div>
+    <div class="cache-indicator" id="cacheIndicator" title="Click to clear cache">Cached</div>
   </div>
 
   <div id="contentContainer" style="display:none;">
@@ -108,18 +108,38 @@ const ICONS = {
 
 let data = {};
 
-function cleanNumber(str) {
-  if (!str) return 0;
-  str = String(str).trim();
-  if (str === '' || str === '-') return 0;
-  str = str.replace(/,/g, '');
-  const num = parseFloat(str);
+function parseCSVAdvanced(line) {
+  const result = [];
+  let current = '';
+  let inQuotes = false;
+  
+  for (let i = 0; i < line.length; i++) {
+    const char = line[i];
+    
+    if (char === '"') {
+      inQuotes = !inQuotes;
+    } else if (char === ',' && !inQuotes) {
+      result.push(current.trim());
+      current = '';
+    } else {
+      current += char;
+    }
+  }
+  result.push(current.trim());
+  return result.map(c => c.replace(/^"|"$/g, ''));
+}
+
+function parseNumber(val) {
+  if (!val) return 0;
+  val = String(val).trim();
+  if (val === '' || val === '-') return 0;
+  val = val.replace(/,/g, '');
+  const num = parseFloat(val);
   return isNaN(num) ? 0 : num;
 }
 
 async function loadDashboard() {
   const cached = getCache();
-  
   if (cached) {
     data = cached;
     render();
@@ -130,7 +150,6 @@ async function loadDashboard() {
     render();
     document.getElementById('cacheIndicator').textContent = 'Updated';
   }
-  
   document.getElementById('loadingContainer').style.display = 'none';
   document.getElementById('contentContainer').style.display = 'block';
 }
@@ -139,10 +158,8 @@ function getCache() {
   const cached = localStorage.getItem(CACHE_KEY);
   const time = localStorage.getItem(CACHE_TIME);
   if (!cached || !time) return null;
-  
   const age = (Date.now() - parseInt(time)) / (1000 * 60 * 60);
   if (age > CACHE_HOURS) return null;
-  
   return JSON.parse(cached);
 }
 
@@ -168,19 +185,18 @@ async function fetchData() {
   let product = '';
   
   for (let i = 1; i < lines.length; i++) {
-    const cells = parseCSV(lines[i]);
+    const cells = parseCSVAdvanced(lines[i]);
     if (!cells[1]) continue;
     
     if (cells[0]) product = cells[0].trim();
     const metric = cells[1].trim();
-    
     if (!product) continue;
     
     const cols = ['Target','MTD','ENT','MID','SMB','D-1','D-2','D-3','D-4','D-5','M-1','M-2'];
     const vals = {};
     
     for (let j = 0; j < cols.length; j++) {
-      vals[cols[j]] = cleanNumber(cells[2+j]);
+      vals[cols[j]] = parseNumber(cells[2 + j]);
     }
     
     if (metric.includes('SLA')) {
@@ -198,28 +214,6 @@ async function fetchData() {
   }
 }
 
-function parseCSV(line) {
-  const cells = [];
-  let cur = '';
-  let inQuotes = false;
-  
-  for (let i = 0; i < line.length; i++) {
-    const char = line[i];
-    
-    if (char === '"') {
-      inQuotes = !inQuotes;
-    } else if (char === ',' && !inQuotes) {
-      cells.push(cur);
-      cur = '';
-    } else {
-      cur += char;
-    }
-  }
-  cells.push(cur);
-  
-  return cells.map(c => c.replace(/^"|"$/g, ''));
-}
-
 function render() {
   buildVerdict();
   buildSLA();
@@ -234,34 +228,20 @@ function v(metric, product, col) {
   return data[metric]?.[product]?.[col] ?? 0;
 }
 
-function formatNumber(num) {
-  if (num >= 1000) {
-    return (num / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
-  }
-  return Math.round(num);
+function formatNum(n) {
+  if (n >= 1000) return (n / 1000).toFixed(1).replace(/\.0$/, '') + 'k';
+  return Math.round(n);
 }
 
 function buildVerdict() {
-  const sla = {
-    Images: v('SLA Breach%','Images','MTD'),
-    '360': v('SLA Breach%','360','MTD'),
-    Video: v('SLA Breach%','Video','MTD')
-  };
-  
-  document.getElementById('verdict').innerHTML = `
-    <div class="verdict">
-      <span class="vi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span>
-      <div class="vt"><b>Health Status: Mixed.</b> Images (${Math.round(sla.Images)}% SLA) on track · 360 (${Math.round(sla['360'])}% SLA) needs attention · Video (${Math.round(sla.Video)}% SLA) at risk.</div>
-    </div>`;
+  const sla = {Images:v('SLA Breach%','Images','MTD'),'360':v('SLA Breach%','360','MTD'),Video:v('SLA Breach%','Video','MTD')};
+  document.getElementById('verdict').innerHTML = `<div class="verdict"><span class="vi"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class="vt"><b>Health Status: Mixed.</b> Images (${Math.round(sla.Images)}% SLA) on track · 360 (${Math.round(sla['360'])}% SLA) needs attention · Video (${Math.round(sla.Video)}% SLA) at risk.</div></div>`;
 }
 
 function buildSLA() {
   const html = ['Images','360','Video'].map(p => {
-    const m = v('SLA Breach%',p,'MTD');
-    const d1=v('SLA Breach%',p,'D-1'),d2=v('SLA Breach%',p,'D-2'),d3=v('SLA Breach%',p,'D-3'),d4=v('SLA Breach%',p,'D-4');
-    const m1=v('SLA Breach%',p,'M-1'),m2=v('SLA Breach%',p,'M-2');
-    const c = COLORS[p];
-    const i = ICONS[p];
+    const m=v('SLA Breach%',p,'MTD'),d1=v('SLA Breach%',p,'D-1'),d2=v('SLA Breach%',p,'D-2'),d3=v('SLA Breach%',p,'D-3'),d4=v('SLA Breach%',p,'D-4'),m1=v('SLA Breach%',p,'M-1'),m2=v('SLA Breach%',p,'M-2');
+    const c=COLORS[p],i=ICONS[p];
     return `<div class="card"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${c.icon};color:${c.brand};align-items:center;justify-content:center;">${i}</span><div><div class="pname">${p}</div><div class="psub">SLA breach</div></div></div><div class="metric"><span class="big" style="color:${c.metric};">${Math.round(m)}</span><span class="munit">%</span></div><div class="lc" data-pts="[${d4},${d3},${d2},${d1}]" data-labels='["D-4","D-3","D-2","D-1"]' data-unit="%" style="width:100%;height:48px;"></div><div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">${Math.round(m1)}%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">${Math.round(m2)}%</div></div></div></div>`;
   }).join('');
   document.getElementById('slaGrid').innerHTML = html;
@@ -269,12 +249,10 @@ function buildSLA() {
 
 function buildPendency() {
   const html = ['Images','360','Video'].map(p => {
-    const m = v('Pendency',p,'MTD');
-    const d1=v('Pendency',p,'D-1'),d2=v('Pendency',p,'D-2'),d3=v('Pendency',p,'D-3'),d4=v('Pendency',p,'D-4');
-    const c = COLORS[p];
-    const i = ICONS[p];
-    const breach = p==='Images'?18:p==='360'?63:79;
-    const overall = p==='Images'?432:p==='360'?1021:613;
+    const m=v('Pendency',p,'MTD'),d1=v('Pendency',p,'D-1'),d2=v('Pendency',p,'D-2'),d3=v('Pendency',p,'D-3'),d4=v('Pendency',p,'D-4');
+    const c=COLORS[p],i=ICONS[p];
+    const breach=p==='Images'?18:p==='360'?63:79;
+    const overall=p==='Images'?432:p==='360'?1021:613;
     return `<div class="card"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${c.icon};color:${c.brand};align-items:center;justify-content:center;">${i}</span><div><div class="pname">${p}</div><div class="psub">Pendency</div></div></div><div class="metric"><span class="big" style="color:${c.metric};">${Math.round(m)}</span><span class="badge" style="background:${c.metric==='#C07C12'?'#FBF2DF':'#FCEBEB'};color:${c.metric};">${breach}% breach</span></div><div class="pmeta">VINs > 6 hrs · of ${overall} overall</div><div class="lc" data-pts="[${d4},${d3},${d2},${d1}]" data-labels='["D-4","D-3","D-2","D-1"]' style="width:100%;height:48px;margin-top:12px;"></div></div>`;
   }).join('');
   document.getElementById('pendencyGrid').innerHTML = html;
@@ -286,10 +264,9 @@ function buildP95P99() {
     const e95=v('P95 Delivery Time(Hrs)',p,'ENT'),e99=v('P99 Delivery Time(Hrs)',p,'ENT');
     const m95=v('P95 Delivery Time(Hrs)',p,'MID'),m99=v('P99 Delivery Time(Hrs)',p,'MID');
     const s95=v('P95 Delivery Time(Hrs)',p,'SMB'),s99=v('P99 Delivery Time(Hrs)',p,'SMB');
-    const c = COLORS[p];
-    const i = ICONS[p];
-    const getC = (v) => v<24?'#E4F4EC':v<72?'#FBF2DF':'#FCEBEB';
-    const getT = (v) => v<24?'#16895C':v<72?'#C07C12':'#D23B3A';
+    const c=COLORS[p],i=ICONS[p];
+    const getC=(v)=>v<24?'#E4F4EC':v<72?'#FBF2DF':'#FCEBEB';
+    const getT=(v)=>v<24?'#16895C':v<72?'#C07C12':'#D23B3A';
     return `<div class="card ptcard"><div class="card-id"><span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${c.icon};color:${c.brand};align-items:center;justify-content:center;">${i}</span><div class="pname" style="line-height:32px;">${p}</div></div><div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;"><div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${getT(p95)};margin-top:3px;">${Math.round(p95)}</div></div><div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${getT(p99)};margin-top:3px;">${Math.round(p99)}</div></div></div><table class="segt"><tr><td class="sgh">Segment</td><td class="svh">P95</td><td class="svh">P99</td></tr><tr><td class="sg">ENT</td><td class="sv"><span style="background:${getC(e95)};color:${getT(e95)};">${Math.round(e95)}</span></td><td class="sv"><span style="background:${getC(e99)};color:${getT(e99)};">${Math.round(e99)}</span></td></tr><tr><td class="sg">MID</td><td class="sv"><span style="background:${getC(m95)};color:${getT(m95)};">${Math.round(m95)}</span></td><td class="sv"><span style="background:${getC(m99)};color:${getT(m99)};">${Math.round(m99)}</span></td></tr><tr><td class="sg">SMB</td><td class="sv"><span style="background:${getC(s95)};color:${getT(s95)};">${Math.round(s95)}</span></td><td class="sv"><span style="background:${getC(s99)};color:${getT(s99)};">${Math.round(s99)}</span></td></tr></table></div>`;
   }).join('');
   document.getElementById('p95Grid').innerHTML = html;
@@ -297,35 +274,20 @@ function buildP95P99() {
 
 function buildIssues() {
   const html = ['Images','360','Video'].map(p => {
-    const c = COLORS[p];
-    const issues = (data.issues[p]||[]).map(iss => ({
-      name: iss.name,
-      mtd: iss.vals.MTD,
-      d1: iss.vals['D-1'],
-      d2: iss.vals['D-2'],
-      d3: iss.vals['D-3'],
-      d4: iss.vals['D-4']
-    })).sort((a,b)=>b.mtd-a.mtd).slice(0,5);
-    
-    if (!issues.length) return '';
-    
-    const rows = issues.map((iss,idx) => {
-      const rb = p==='Images'?'#FBF2DF':'#FCEBEB';
-      const rc = p==='Images'?'#C07C12':'#D23B3A';
-      const dmtd = formatNumber(iss.mtd);
-      return `<div class="irow"><span class="irank" style="background:${rb};color:${rc};">${idx+1}</span><div class="itxt"><div class="ititle">${iss.name}</div><div class="idesc">MTD tracking</div></div><div class="imtd">${dmtd}</div><div class="ichart"><div class="lc" data-pts="[${iss.d4},${iss.d3},${iss.d2},${iss.d1}]" data-labels='["D-4","D-3","D-2","D-1"]' style="width:100%;height:28px;"></div></div></div>`;
-    }).join('');
-    
-    return `<div class="card icard"><div class="ihead"><span style="width:9px;height:9px;border-radius:50%;background:${c.dot};display:inline-block;"></span><span class="pname">${p}</span></div>${rows}</div>`;
+    const c=COLORS[p];
+    const issues=(data.issues[p]||[]).map(iss=>({name:iss.name,mtd:iss.vals.MTD,d1:iss.vals['D-1'],d2:iss.vals['D-2'],d3:iss.vals['D-3'],d4:iss.vals['D-4']})).sort((a,b)=>b.mtd-a.mtd).slice(0,5);
+    if(!issues.length)return'';
+    const rows=issues.map((iss,idx)=>{const rb=p==='Images'?'#FBF2DF':'#FCEBEB';const rc=p==='Images'?'#C07C12':'#D23B3A';const dmtd=formatNum(iss.mtd);return`<div class="irow"><span class="irank" style="background:${rb};color:${rc};">${idx+1}</span><div class="itxt"><div class="ititle">${iss.name}</div><div class="idesc">MTD tracking</div></div><div class="imtd">${dmtd}</div><div class="ichart"><div class="lc" data-pts="[${iss.d4},${iss.d3},${iss.d2},${iss.d1}]" data-labels='["D-4","D-3","D-2","D-1"]' style="width:100%;height:28px;"></div></div></div>`;}).join('');
+    return`<div class="card icard"><div class="ihead"><span style="width:9px;height:9px;border-radius:50%;background:${c.dot};display:inline-block;"></span><span class="pname">${p}</span></div>${rows}</div>`;
   }).join('');
   document.getElementById('issuesGrid').innerHTML = html;
 }
 
 function buildCharts() {
   document.querySelectorAll('.lc').forEach(el => {
-    const pts = JSON.parse(el.getAttribute('data-pts'));
-    const labels = JSON.parse(el.getAttribute('data-labels'));
-    const unit = el.getAttribute('data-unit')||'';
+    const pts=JSON.parse(el.getAttribute('data-pts'));
+    const labels=JSON.parse(el.getAttribute('data-labels'));
+    const unit=el.getAttribute('data-unit')||'';
     const n=pts.length,mn=Math.min(...pts),mx=Math.max(...pts),rng=(mx-mn)||1;
     const col=pts[n-1]>=pts[0]?'#E2504F':'#1D9E75';
     const W=100,H=40,pX=3,pT=6,pB=7;
@@ -340,21 +302,23 @@ function buildCharts() {
     const tip=document.createElement('div');tip.className='lc-tip';
     const cur=document.createElement('div');cur.className='lc-cursor';cur.style.background=col;
     el.appendChild(tip);el.appendChild(cur);
-    for(let i=0;i<n;i++){
-      const hit=document.createElement('div');
-      hit.style.cssText=`position:absolute;top:0;bottom:0;left:${(i-0.5)/n*100}%;width:${100/n}%;cursor:pointer;`;
-      hit.addEventListener('mouseenter',()=>{tip.style.left=X(i)+'%';tip.style.top=(Y(pts[i])/H*100)+'%';tip.style.display='block';tip.textContent=`${labels[i]} · ${pts[i]}${unit}`;cur.style.left=X(i)+'%';cur.style.top=(Y(pts[i])/H*100)+'%';cur.style.display='block';});
-      el.appendChild(hit);
-    }
+    for(let i=0;i<n;i++){const hit=document.createElement('div');hit.style.cssText=`position:absolute;top:0;bottom:0;left:${(i-0.5)/n*100}%;width:${100/n}%;cursor:pointer;`;hit.addEventListener('mouseenter',()=>{tip.style.left=X(i)+'%';tip.style.top=(Y(pts[i])/H*100)+'%';tip.style.display='block';tip.textContent=`${labels[i]} · ${Math.round(pts[i])}${unit}`;cur.style.left=X(i)+'%';cur.style.top=(Y(pts[i])/H*100)+'%';cur.style.display='block';});el.appendChild(hit);}
     el.addEventListener('mouseleave',()=>{tip.style.display='none';cur.style.display='none';});
   });
 }
 
 function updateDate() {
-  const now = new Date();
-  document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
-  document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
+  const now=new Date();
+  document.getElementById('dateTime').textContent=now.toLocaleDateString('en-US',{year:'numeric',month:'short',day:'numeric'});
+  document.getElementById('lastUpdate').textContent=now.toLocaleTimeString();
 }
+
+document.getElementById('cacheIndicator').addEventListener('click',function(){
+  localStorage.removeItem(CACHE_KEY);
+  localStorage.removeItem(CACHE_TIME);
+  document.getElementById('cacheIndicator').textContent='Cache cleared!';
+  setTimeout(()=>{location.reload();},1000);
+});
 
 document.addEventListener('DOMContentLoaded', loadDashboard);
 </script>
