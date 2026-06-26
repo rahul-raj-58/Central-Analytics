@@ -204,56 +204,54 @@ async function fetchData() {
     'P99 Delivery Time(Hrs)': {},
     issues: {}
   };
-  
+
+  // Read header row to know exact expected column count
+  const headerCells = parseCSVAdvanced(lines[0]);
+  const EXPECTED_TOTAL = headerCells.length; // e.g. 14 cols total
+
   let product = '';
-  
+  const colNames = ['Target','MTD','ENT','MID','SMB','D-1','D-2','D-3','D-4','D-5','M-1','M-2'];
+
   for (let i = 1; i < lines.length; i++) {
     const rawCells = parseCSVAdvanced(lines[i]);
-    if (!rawCells[1]) continue;
-    
+    if (!rawCells[1] && !rawCells[0]) continue;
+
     if (rawCells[0]) product = rawCells[0].trim();
-    const metric = rawCells[1].trim();
-    if (!product) continue;
-    
-    // KEY FIX: Merge split numbers.
-    // e.g. Google Sheets exports 1,405 without quotes → raw CSV has ...,...,1,405,...
-    // This causes the cell array to be longer than expected and shifts all columns.
-    // We detect adjacent pure-digit cells where left < 1000 and right is exactly 3 digits
-    // and merge them back as "left * 1000 + right" e.g. [1, 405] → 1405
-    const cells = [rawCells[0], rawCells[1]]; // keep product + metric as-is
-    const valueCells = rawCells.slice(2);
-    const mergedValues = [];
-    
-    for (let k = 0; k < valueCells.length; k++) {
-      const cur = valueCells[k];
-      const nxt = valueCells[k + 1];
-      
-      // Check if this looks like the thousands part and next is the hundreds part
-      const curClean = (cur || '').trim().replace(/%/g, '');
-      const nxtClean = (nxt || '').trim().replace(/%/g, '');
-      
-      if (
-        /^\d{1,3}$/.test(curClean) &&
-        /^\d{3}$/.test(nxtClean) &&
-        parseInt(curClean) > 0
-      ) {
-        // Merge: "1" + "405" → 1405
-        mergedValues.push(curClean + nxtClean);
-        k++; // Skip next cell since we consumed it
-      } else {
-        mergedValues.push(cur);
+    const metric = rawCells[1] ? rawCells[1].trim() : '';
+    if (!product || !metric) continue;
+
+    // FIX: When rawCells has MORE cells than expected, it means one or more
+    // numbers with commas were split (e.g. "1,405" → two cells "1","405").
+    // We reconstruct the correct cells by merging from right-to-left
+    // so that the total count matches EXPECTED_TOTAL.
+    let cells = [...rawCells];
+    const extra = cells.length - EXPECTED_TOTAL;
+
+    if (extra > 0) {
+      // Work backwards through value columns (index 2 onwards) merging pairs
+      // A split number looks like: left is 1-3 digits, right is exactly 3 digits
+      let merged = cells.slice(2); // just the value portion
+      let mergeCount = 0;
+
+      for (let k = 0; k < merged.length - 1 && mergeCount < extra; k++) {
+        const a = (merged[k] || '').trim();
+        const b = (merged[k+1] || '').trim();
+        // Only merge if a is 1-3 pure digits AND b is exactly 3 pure digits
+        if (/^\d{1,3}$/.test(a) && /^\d{3}$/.test(b)) {
+          merged.splice(k, 2, a + b); // replace two cells with merged value
+          mergeCount++;
+          k--; // re-check this position
+        }
       }
+
+      cells = [cells[0], cells[1], ...merged];
     }
-    
-    const allCells = cells.concat(mergedValues);
-    
-    const cols = ['Target','MTD','ENT','MID','SMB','D-1','D-2','D-3','D-4','D-5','M-1','M-2'];
+
     const vals = {};
-    
-    for (let j = 0; j < cols.length; j++) {
-      vals[cols[j]] = parseNumber(allCells[2 + j]);
+    for (let j = 0; j < colNames.length; j++) {
+      vals[colNames[j]] = parseNumber(cells[2 + j]);
     }
-    
+
     if (metric.includes('SLA')) {
       data['SLA Breach%'][product] = vals;
     } else if (metric.includes('Pendency')) {
