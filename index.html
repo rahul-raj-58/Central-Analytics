@@ -68,8 +68,10 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:"Inter",-apple-system
 </div>
 
 <script>
-// CSV URL - converts pubhtml to CSV export
-const CSV_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/export?format=csv&gid=2034010422';
+// Google Visualization API URL - Works with published sheets
+const SHEET_ID = 'e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG';
+const GID = '2034010422';
+const VIZ_URL = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json&headers=1&gid=${GID}`;
 
 const COLORS = {
   Images: { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#6C4BD9' },
@@ -97,17 +99,19 @@ async function loadDashboard() {
   try {
     const startTime = performance.now();
     
-    // Fetch CSV with cache busting
-    const response = await fetch(CSV_URL + '&t=' + Date.now(), {
-      cache: 'no-store'
-    });
+    // Fetch from Google Visualization API
+    const response = await fetch(VIZ_URL + '&t=' + Date.now());
     
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     
-    const csv = await response.text();
+    const text = await response.text();
     const endTime = performance.now();
     
-    sheetData = parseCSV(csv);
+    // Parse Google Visualization response
+    const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+    const json = JSON.parse(jsonString);
+    
+    sheetData = parseVisualizationData(json);
     
     // Update UI
     updateDateTime();
@@ -124,13 +128,22 @@ async function loadDashboard() {
   }
 }
 
-function parseCSV(csv) {
-  const lines = csv.trim().split('\n');
-  const headers = lines[0].split(',').map(h => h.trim());
+function parseVisualizationData(json) {
   const data = {};
-
-  lines.slice(1).forEach(line => {
-    const cells = line.split(',').map(c => c.trim());
+  
+  if (!json.table || !json.table.rows) {
+    throw new Error('Invalid sheet data format');
+  }
+  
+  const cols = json.table.cols;
+  const rows = json.table.rows;
+  
+  // Get headers from column labels
+  const headers = cols.map(col => col.label);
+  
+  // Parse rows
+  rows.forEach(row => {
+    const cells = row.c.map(cell => cell ? cell.v : '');
     const product = cells[0];
     const metric = cells[1];
     
@@ -141,7 +154,7 @@ function parseCSV(csv) {
     data[product][metric] = {};
     headers.slice(2).forEach((header, i) => {
       const val = cells[i + 2];
-      data[product][metric][header] = val ? parseFloat(val) || val : 0;
+      data[product][metric][header] = val ? (typeof val === 'number' ? val : parseFloat(val) || 0) : 0;
     });
   });
   
