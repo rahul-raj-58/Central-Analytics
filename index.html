@@ -8,19 +8,15 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .wrap{max-width:760px;margin:0 auto;padding:14px 14px 60px;}
 
 /* ---- Slim header ---- */
-.hbar{display:flex;align-items:center;justify-content:space-between;padding:6px 2px 14px;}
+.hbar{display:flex;align-items:center;justify-content:space-between;padding:6px 110px 14px 2px;}
 .htitle{font-size:19px;font-weight:900;color:#0F172A;letter-spacing:-.4px;}
 .hupd{font-size:10px;color:#9AA0AD;font-weight:500;}
 
 /* ---- Floating refresh (outside report) ---- */
-.refresh-fab{position:fixed;bottom:18px;right:18px;z-index:900;background:#6C4BD9;color:#fff;border:none;font-family:inherit;font-size:13px;font-weight:700;padding:11px 16px;border-radius:30px;cursor:pointer;display:flex;align-items:center;gap:7px;box-shadow:0 6px 18px rgba(108,75,217,.4);transition:transform .15s,background .2s;}
+.refresh-fab{position:fixed;top:14px;right:18px;z-index:900;background:#6C4BD9;color:#fff;border:none;font-family:inherit;font-size:12px;font-weight:700;padding:8px 14px;border-radius:30px;cursor:pointer;display:flex;align-items:center;gap:6px;box-shadow:0 4px 14px rgba(108,75,217,.35);transition:transform .15s,background .2s;}
 .refresh-fab:active{transform:scale(.95);}
 .refresh-fab:disabled{opacity:.7;cursor:default;}
 .refresh-fab svg{width:14px;height:14px;}
-
-.verdict{display:flex;gap:9px;align-items:flex-start;background:#FCEBEB;border-left:4px solid #D23B3A;border-radius:11px;padding:11px 13px;margin:2px 0 6px;}
-.verdict .vi{color:#D23B3A;flex:none;margin-top:1px;}
-.verdict .vt{font-size:13px;color:#B23535;line-height:1.45;}
 
 .sect{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:22px 0 10px;}
 .sect-l{display:flex;align-items:center;gap:8px;}
@@ -99,7 +95,6 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
   </div>
 
   <div id="contentContainer" style="display:none;">
-    <div id="verdict"></div>
 
     <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">SLA Breach</span></div><span class="sect-note">% · last 5 days</span></div>
     <div class="grid" id="slaGrid"></div>
@@ -210,17 +205,12 @@ function fmt(n){ if(n>=1000)return (n/1000).toFixed(1).replace(/\.0$/,'')+'k'; r
 function days5(metric,p){ return [v(metric,p,'D-5'),v(metric,p,'D-4'),v(metric,p,'D-3'),v(metric,p,'D-2'),v(metric,p,'D-1')]; }
 const DAY_LABELS='["D-5","D-4","D-3","D-2","D-1"]';
 
-function render(){ buildTitle(); buildVerdict(); buildSLA(); buildPendency(); buildP95(); buildIssues(); buildCharts(); }
+function render(){ buildTitle(); buildSLA(); buildPendency(); buildP95(); buildIssues(); buildCharts(); }
 
 function buildTitle(){
   const now=new Date();
   document.getElementById('reportTitle').textContent='Delivery Report · '+now.toLocaleDateString('en-GB',{day:'numeric',month:'long',year:'numeric'});
   document.getElementById('lastUpdate').textContent=now.toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'});
-}
-
-function buildVerdict(){
-  const s={Images:v('SLA Breach%','Images','MTD'),'360':v('SLA Breach%','360','MTD'),Video:v('SLA Breach%','Video','MTD')};
-  document.getElementById('verdict').innerHTML='<div class="verdict"><span class="vi"><svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg></span><div class="vt"><b>Health: Mixed.</b> Images '+Math.round(s.Images)+'% SLA · 360 '+Math.round(s['360'])+'% · Video '+Math.round(s.Video)+'%. 360 &amp; Video need attention.</div></div>';
 }
 
 function card(p,inner,cls){
