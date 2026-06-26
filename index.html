@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delivery Dashboard - Live</title>
+<title>Delivery Dashboard - Complete Dynamic</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
@@ -10,7 +10,6 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .htitle{font-size:21px;font-weight:700;color:#fff;letter-spacing:-.3px;}
 .hsub{font-size:13px;color:#E5DEFA;margin-top:5px;}
 .htime{position:absolute;top:14px;right:18px;font-size:11px;color:#CFC4F5;}
-.refresh-info{position:absolute;bottom:8px;right:18px;font-size:9px;color:#CFC4F5;}
 .cache-indicator{position:absolute;bottom:8px;left:18px;font-size:9px;color:#CFC4F5;}
 .loading{position:fixed;top:0;left:0;right:0;bottom:0;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;z-index:1000;}
 .loading-spinner{background:white;border-radius:12px;padding:30px;text-align:center;box-shadow:0 10px 40px rgba(0,0,0,.3);}
@@ -68,7 +67,6 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div class="htitle">Delivery Dashboard</div>
     <div class="hsub">Images · 360 · Video</div>
     <div class="cache-indicator" id="cacheIndicator">Cached</div>
-    <div class="refresh-info" id="refreshInfo">Next refresh in 6h</div>
   </div>
 
   <div id="errorBanner" class="error-banner"></div>
@@ -106,7 +104,7 @@ const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPr
 
 const CACHE_KEY = 'delivery_dashboard_cache';
 const CACHE_TIME_KEY = 'delivery_dashboard_cache_time';
-const CACHE_DURATION = 6 * 60 * 60 * 1000; // 6 hours
+const CACHE_DURATION = 6 * 60 * 60 * 1000;
 
 const COLORS = {
   Images: { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#6C4BD9' },
@@ -182,9 +180,7 @@ async function fetchSheetData() {
   const data = {};
   let currentProduct = '';
   
-  // Parse CSV with proper handling
   for (let i = 1; i < lines.length; i++) {
-    // Simple CSV parsing without regex
     const line = lines[i];
     const cells = [];
     let current = '';
@@ -248,7 +244,7 @@ function buildDashboard() {
 }
 
 function buildVerdict() {
-  const slaImages = val('SLA Breach % (>6 Hrs)', 'Images', 'MTD');
+  const slaImages = val('SLA Breach%', 'Images', 'MTD');
   const sla360 = val('SLA Breach%', '360', 'MTD');
   const slaVideo = val('SLA Breach%', 'Video', 'MTD');
   
@@ -263,14 +259,13 @@ function buildVerdict() {
 
 function buildSLA() {
   const html = ['Images', '360', 'Video'].map(product => {
-    const metricName = product === 'Images' ? 'SLA Breach % (>6 Hrs)' : 'SLA Breach%';
-    const mtd = val(metricName, product, 'MTD');
-    const d1 = val(metricName, product, 'D-1');
-    const d2 = val(metricName, product, 'D-2');
-    const d3 = val(metricName, product, 'D-3');
-    const d4 = val(metricName, product, 'D-4');
-    const m1 = val(metricName, product, 'M-1');
-    const m2 = val(metricName, product, 'M-2');
+    const mtd = val('SLA Breach%', product, 'MTD');
+    const d1 = val('SLA Breach%', product, 'D-1');
+    const d2 = val('SLA Breach%', product, 'D-2');
+    const d3 = val('SLA Breach%', product, 'D-3');
+    const d4 = val('SLA Breach%', product, 'D-4');
+    const m1 = val('SLA Breach%', product, 'M-1');
+    const m2 = val('SLA Breach%', product, 'M-2');
     const color = COLORS[product];
     const icon = ICONS[product];
     
@@ -291,6 +286,10 @@ function buildSLA() {
 function buildPendency() {
   const html = ['Images', '360', 'Video'].map(product => {
     const mtd = val('Pendency', product, 'MTD');
+    const d1 = val('Pendency', product, 'D-1');
+    const d2 = val('Pendency', product, 'D-2');
+    const d3 = val('Pendency', product, 'D-3');
+    const d4 = val('Pendency', product, 'D-4');
     const color = COLORS[product];
     const icon = ICONS[product];
     const breachPercent = product === 'Images' ? 18 : product === '360' ? 63 : 79;
@@ -303,6 +302,7 @@ function buildPendency() {
       </div>
       <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(mtd)}</span><span class="badge" style="background:${color.metric==='#C07C12'?'#FBF2DF':'#FCEBEB'};color:${color.metric};">${breachPercent}% breach</span></div>
       <div class="pmeta">VINs > 6 hrs · <span style="color:#9AA0AD;">of ${overall} overall</span></div>
+      <div class="lc" data-pts="[${d4}, ${d3}, ${d2}, ${d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:48px;margin-top:12px;"></div>
     </div>`;
   }).join('');
   
@@ -347,16 +347,22 @@ function buildP95P99() {
 }
 
 function buildIssues() {
-  const issueMetrics = Object.keys(allData).filter(m => {
-    const lowerM = m.toLowerCase();
-    return !['sla', 'pendency', 'p95', 'p99'].some(k => lowerM.includes(k));
-  });
-  
   const html = ['Images', '360', 'Video'].map(product => {
     const color = COLORS[product];
     const issues = [];
     
-    issueMetrics.forEach(metric => {
+    // Find all Top 5 Issues rows for this product
+    const topIssuesMetrics = Object.keys(allData).filter(m => 
+      m.startsWith('Remove BG') || m.startsWith('Tilt') || 
+      m.startsWith('roi_changes') || m.startsWith('Window') || 
+      m.startsWith('Wall') || m.startsWith('Placement') || 
+      m.startsWith('Exposure') || m.startsWith('Warping') || 
+      m.startsWith('CompleteCar') || m.startsWith('Portrait') || 
+      m.startsWith('Interior') || m.startsWith('Data') || 
+      m.startsWith('Spyne') || m.startsWith('Sold')
+    );
+    
+    topIssuesMetrics.forEach((metric, idx) => {
       const mtd = val(metric, product, 'MTD');
       if (mtd && mtd > 0) {
         issues.push({
