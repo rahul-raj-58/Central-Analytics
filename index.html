@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>Delivery Dashboard - Fully Dynamic</title>
+<title>Delivery Dashboard - Live Dynamic</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;}
@@ -21,7 +21,6 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
 .grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;}
 @media(max-width:600px){.grid{grid-template-columns:1fr;}}
 .card{background:#FFFFFF;border:1px solid #ECECF1;border-radius:16px;padding:16px;box-shadow:0 1px 2px rgba(20,25,40,.04),0 6px 18px rgba(20,25,40,.03);}
-.card-top{display:flex;align-items:center;justify-content:space-between;}
 .card-id{display:flex;align-items:center;gap:10px;}
 .pname{font-size:14px;font-weight:700;color:#1C2230;}
 .psub{font-size:11px;color:#9AA0AD;margin-top:1px;}
@@ -82,7 +81,7 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div class="grid" id="pendencyGrid"></div>
 
     <div class="cap-row"><div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Delivery time · P95 / P99 (hrs)</span></div>
-    <span class="legend"><span class="ld" style="background:#16895C;"></span>< 24h &nbsp;<span class="ld" style="background:#C07C12;"></span>24–72h &nbsp;<span class="ld" style="background:#D23B3A;"></span>> 72h</span></div>
+    <span class="legend"><span class="ld" style="background:#16895C;"></span>< 24h &nbsp;<span class="ld" style="background:#C07C12;"></span>24–72h &nbsp;<span class="ld" style="background:#D23B3A;"></span>> 72h</span></div></div>
     <div class="grid" id="p95Grid"></div>
 
     <div style="display:flex;align-items:center;gap:9px;margin:26px 0 12px;"><span style="width:4px;height:17px;border-radius:3px;background:#6C4BD9;"></span><span style="font-size:15px;font-weight:700;color:#1C2230;letter-spacing:-.1px;">Top Issues · by Product · 4-day trend</span></div>
@@ -95,18 +94,13 @@ body{margin:0;background:#F6F6F9;color:#1C2230;font-family:'Inter',-apple-system
     <div class="loading-spinner">
       <div class="spinner"></div>
       <p style="margin:0;color:#1C2230;font-weight:600;">Loading Dashboard</p>
-      <p id="loadingStatus" style="margin:8px 0 0;font-size:12px;color:#64748B;">Fetching data from 3 Google Sheets...</p>
+      <p id="loadingStatus" style="margin:8px 0 0;font-size:12px;color:#64748B;">Fetching live data from Google Sheets...</p>
     </div>
   </div>
 </div>
 
 <script>
-// Google Sheets API URLs - using gviz for JSON data
-const SHEET_URLS = {
-  'Images': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/gviz/tq?tqx=out:json&headers=1&gid=256480606',
-  '360': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/gviz/tq?tqx=out:json&headers=1&gid=1293010200',
-  'Video': 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/gviz/tq?tqx=out:json&headers=1&gid=0'
-};
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/gviz/tq?tqx=out:json&headers=1&gid=2034010422';
 
 const COLORS = {
   Images: { icon: '#EEEAFB', brand: '#6C4BD9', metric: '#C07C12', dot: '#6C4BD9' },
@@ -120,7 +114,7 @@ const ICONS = {
   Video: '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10l6-3.2v10.4l-6-3.2z"/></svg>'
 };
 
-let allData = {};
+let sheetData = {};
 let refreshTimer = null;
 
 async function loadDashboard() {
@@ -132,88 +126,62 @@ async function loadDashboard() {
   contentContainer.style.display = 'none';
   
   try {
-    loadingStatus.textContent = 'Fetching data from 3 sheets...';
-    
-    const [imagesData, data360, videoData] = await Promise.all([
-      fetchSheetData('Images'),
-      fetchSheetData('360'),
-      fetchSheetData('Video')
-    ]);
-    
-    allData = {
-      'Images': imagesData,
-      '360': data360,
-      'Video': videoData
-    };
+    loadingStatus.textContent = 'Fetching data from Delivery sheet...';
+    sheetData = await fetchSheetData();
     
     loadingStatus.textContent = 'Rendering dashboard...';
-    
     buildDashboard();
     updateDateTime();
     buildCharts();
     
     contentContainer.style.display = 'block';
     loadingContainer.style.display = 'none';
-    
     setupAutoRefresh();
     
   } catch (error) {
-    console.error('Error loading dashboard:', error);
+    console.error('Error:', error);
     const errorBanner = document.getElementById('errorBanner');
-    errorBanner.textContent = `Error: ${error.message}. Retrying in 30 seconds...`;
+    errorBanner.textContent = `Error loading dashboard: ${error.message}. Retrying in 30 seconds...`;
     errorBanner.style.display = 'block';
     setTimeout(loadDashboard, 30000);
   }
 }
 
-async function fetchSheetData(product) {
-  try {
-    const url = SHEET_URLS[product] + '&t=' + Date.now();
-    const response = await fetch(url);
-    
-    if (!response.ok) throw new Error(`HTTP ${response.status}`);
-    
-    const text = await response.text();
-    const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-    const json = JSON.parse(jsonString);
-    
-    return parseSheetData(json);
-  } catch (error) {
-    console.error(`Error fetching ${product} data:`, error);
-    throw new Error(`Failed to fetch ${product} sheet`);
-  }
-}
-
-function parseSheetData(json) {
+async function fetchSheetData() {
+  const url = SHEET_URL + '&t=' + Date.now();
+  const response = await fetch(url);
+  
+  if (!response.ok) throw new Error(`HTTP ${response.status}`);
+  
+  const text = await response.text();
+  const jsonString = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+  const json = JSON.parse(jsonString);
+  
   const data = {};
+  if (!json.table || !json.table.rows) throw new Error('Invalid sheet format');
   
-  if (!json.table || !json.table.rows) {
-    throw new Error('Invalid sheet format');
-  }
-  
-  const cols = json.table.cols;
+  const cols = json.table.cols.map(c => c.label || '');
   const rows = json.table.rows;
-  const headers = cols.map(col => col.label || '');
   
   rows.forEach(row => {
-    const cells = row.c.map(cell => cell ? cell.v : null);
+    const cells = row.c.map(c => c ? c.v : null);
     const metric = cells[0];
-    
     if (!metric) return;
     
     data[metric] = {};
-    headers.slice(1).forEach((header, i) => {
+    cols.slice(1).forEach((col, i) => {
       const val = cells[i + 1];
-      data[metric][header] = val ? (typeof val === 'number' ? val : parseFloat(val) || 0) : 0;
+      data[metric][col] = val ? (typeof val === 'number' ? val : parseFloat(val) || 0) : 0;
     });
   });
   
   return data;
 }
 
-function getMetricValue(product, metric, column) {
-  const val = allData[product]?.[metric]?.[column];
-  return val !== undefined ? val : 0;
+function val(metric, product, column) {
+  const products = { 'Images': 'Images', '360': '360', 'Video': 'Video' };
+  const colName = `${products[product]} ${column}`;
+  return sheetData[metric]?.[colName] ?? 0;
 }
 
 function buildDashboard() {
@@ -225,9 +193,9 @@ function buildDashboard() {
 }
 
 function buildVerdict() {
-  const slaImages = getMetricValue('Images', 'SLA Breach %', 'MTD');
-  const sla360 = getMetricValue('360', 'SLA Breach %', 'MTD');
-  const slaVideo = getMetricValue('Video', 'SLA Breach %', 'MTD');
+  const slaImages = val('SLA Breach %', 'Images', 'MTD');
+  const sla360 = val('SLA Breach %', '360', 'MTD');
+  const slaVideo = val('SLA Breach %', 'Video', 'MTD');
   
   const msg = `Images (${Math.round(slaImages)}% SLA) on track · 360 (${Math.round(sla360)}% SLA) needs attention · Video (${Math.round(slaVideo)}% SLA) at risk. High pendency on 360 & Video; Images manageable.`;
   
@@ -240,24 +208,22 @@ function buildVerdict() {
 
 function buildSLA() {
   const html = ['Images', '360', 'Video'].map(product => {
-    const val = getMetricValue(product, 'SLA Breach %', 'MTD');
-    const d1 = getMetricValue(product, 'SLA Breach %', 'D-1');
-    const d2 = getMetricValue(product, 'SLA Breach %', 'D-2');
-    const d3 = getMetricValue(product, 'SLA Breach %', 'D-3');
-    const d4 = getMetricValue(product, 'SLA Breach %', 'D-4');
-    const m1 = getMetricValue(product, 'SLA Breach %', 'M-1');
-    const m2 = getMetricValue(product, 'SLA Breach %', 'M-2');
+    const mtd = val('SLA Breach %', product, 'MTD');
+    const d1 = val('SLA Breach %', product, 'D-1');
+    const d2 = val('SLA Breach %', product, 'D-2');
+    const d3 = val('SLA Breach %', product, 'D-3');
+    const d4 = val('SLA Breach %', product, 'D-4');
+    const m1 = val('SLA Breach %', product, 'M-1');
+    const m2 = val('SLA Breach %', product, 'M-2');
     const color = COLORS[product];
     const icon = ICONS[product];
     
     return `<div class="card">
-      <div class="card-top">
-        <div class="card-id">
-          <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
-          <div><div class="pname">${product}</div><div class="psub">SLA breach</div></div>
-        </div>
+      <div class="card-id">
+        <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
+        <div><div class="pname">${product}</div><div class="psub">SLA breach</div></div>
       </div>
-      <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(val)}</span><span class="munit">%</span></div>
+      <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(mtd)}</span><span class="munit">%</span></div>
       <div class="lc" data-pts="[${d4}, ${d3}, ${d2}, ${d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="%" style="width:100%;height:48px;"></div>
       <div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">${Math.round(m1)}%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">${Math.round(m2)}%</div></div></div>
     </div>`;
@@ -268,20 +234,18 @@ function buildSLA() {
 
 function buildPendency() {
   const html = ['Images', '360', 'Video'].map(product => {
-    const val = getMetricValue(product, 'Pendency', 'MTD');
+    const mtd = val('Pendency', product, 'MTD');
     const color = COLORS[product];
     const icon = ICONS[product];
     const breachPercent = product === 'Images' ? 18 : product === '360' ? 63 : 79;
     const overall = product === 'Images' ? 432 : product === '360' ? 1021 : 613;
     
     return `<div class="card">
-      <div class="card-top">
-        <div class="card-id">
-          <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
-          <div><div class="pname">${product}</div><div class="psub">Pendency</div></div>
-        </div>
+      <div class="card-id">
+        <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
+        <div><div class="pname">${product}</div><div class="psub">Pendency</div></div>
       </div>
-      <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(val)}</span><span class="badge" style="background:${color.metric==='#C07C12'?'#FBF2DF':'#FCEBEB'};color:${color.metric};">${breachPercent}% breach</span></div>
+      <div class="metric"><span class="big" style="color:${color.metric};">${Math.round(mtd)}</span><span class="badge" style="background:${color.metric==='#C07C12'?'#FBF2DF':'#FCEBEB'};color:${color.metric};">${breachPercent}% breach</span></div>
       <div class="pmeta">VINs > 6 hrs · <span style="color:#9AA0AD;">of ${overall} overall</span></div>
     </div>`;
   }).join('');
@@ -291,42 +255,31 @@ function buildPendency() {
 
 function buildP95P99() {
   const html = ['Images', '360', 'Video'].map(product => {
-    const p95 = getMetricValue(product, 'P95', 'MTD');
-    const p99 = getMetricValue(product, 'P99', 'MTD');
-    const ent_p95 = getMetricValue(product, 'P95', 'ENT');
-    const ent_p99 = getMetricValue(product, 'P99', 'ENT');
-    const mid_p95 = getMetricValue(product, 'P95', 'MID');
-    const mid_p99 = getMetricValue(product, 'P99', 'MID');
-    const smb_p95 = getMetricValue(product, 'P95', 'SMB');
-    const smb_p99 = getMetricValue(product, 'P99', 'SMB');
+    const p95 = val('P95', product, 'MTD');
+    const p99 = val('P99', product, 'MTD');
+    const ent_p95 = val('P95', product, 'ENT');
+    const ent_p99 = val('P99', product, 'ENT');
+    const mid_p95 = val('P95', product, 'MID');
+    const mid_p99 = val('P99', product, 'MID');
+    const smb_p95 = val('P95', product, 'SMB');
+    const smb_p99 = val('P99', product, 'SMB');
     const color = COLORS[product];
     const icon = ICONS[product];
     
-    const getColor = (val) => {
-      if (val < 24) return '#E4F4EC';
-      if (val < 72) return '#FBF2DF';
-      return '#FCEBEB';
-    };
-    
-    const getTextColor = (val) => {
-      if (val < 24) return '#16895C';
-      if (val < 72) return '#C07C12';
-      return '#D23B3A';
-    };
+    const getColor = (v) => v < 24 ? '#E4F4EC' : v < 72 ? '#FBF2DF' : '#FCEBEB';
+    const getTextColor = (v) => v < 24 ? '#16895C' : v < 72 ? '#C07C12' : '#D23B3A';
     
     return `<div class="card ptcard">
-      <div class="card-top">
-        <div class="card-id">
-          <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
-          <div class="pname" style="line-height:32px;">${product}</div>
-        </div>
+      <div class="card-id">
+        <span style="display:inline-flex;width:32px;height:32px;border-radius:9px;background:${color.icon};color:${color.brand};align-items:center;justify-content:center;">${icon}</span>
+        <div class="pname" style="line-height:32px;">${product}</div>
       </div>
       <div style="display:flex;gap:16px;margin:10px 0 0;padding-top:10px;border-top:1px solid #ECECF1;">
         <div><div class="ptl">P95</div><div style="font-size:16px;font-weight:700;color:${getTextColor(p95)};margin-top:3px;">${Math.round(p95)}</div></div>
         <div><div class="ptl">P99</div><div style="font-size:16px;font-weight:700;color:${getTextColor(p99)};margin-top:3px;">${Math.round(p99)}</div></div>
       </div>
       <table class="segt">
-        <tr><td class="sgh">Segment</td><td class="svh">P95 (hrs)</td><td class="svh">P99 (hrs)</td></tr>
+        <tr><td class="sgh">Segment</td><td class="svh">P95</td><td class="svh">P99</td></tr>
         <tr><td class="sg">ENT</td><td class="sv"><span style="background:${getColor(ent_p95)};color:${getTextColor(ent_p95)};">${Math.round(ent_p95)}</span></td><td class="sv"><span style="background:${getColor(ent_p99)};color:${getTextColor(ent_p99)};">${Math.round(ent_p99)}</span></td></tr>
         <tr><td class="sg">MID</td><td class="sv"><span style="background:${getColor(mid_p95)};color:${getTextColor(mid_p95)};">${Math.round(mid_p95)}</span></td><td class="sv"><span style="background:${getColor(mid_p99)};color:${getTextColor(mid_p99)};">${Math.round(mid_p99)}</span></td></tr>
         <tr><td class="sg">SMB</td><td class="sv"><span style="background:${getColor(smb_p95)};color:${getTextColor(smb_p95)};">${Math.round(smb_p95)}</span></td><td class="sv"><span style="background:${getColor(smb_p99)};color:${getTextColor(smb_p99)};">${Math.round(smb_p99)}</span></td></tr>
@@ -340,32 +293,33 @@ function buildP95P99() {
 function buildIssues() {
   const html = ['Images', '360', 'Video'].map(product => {
     const color = COLORS[product];
-    
-    // Get all metrics that could be top issues (exclude standard ones)
-    const standardMetrics = ['SLA Breach %', 'Pendency', 'P95', 'P99', 'MTD', 'D-1', 'D-2', 'D-3', 'D-4', 'M-1', 'M-2'];
     const issues = [];
     
-    for (let [metric, values] of Object.entries(allData[product] || {})) {
+    // Find all metrics that are Top Issues (not standard KPIs)
+    const standardMetrics = ['SLA Breach %', 'Pendency', 'P95', 'P99'];
+    const standardColumns = ['MTD', 'D-1', 'D-2', 'D-3', 'D-4', 'M-1', 'M-2', 'ENT', 'MID', 'SMB', 'Target'];
+    
+    for (let [metric, cols] of Object.entries(sheetData)) {
       if (standardMetrics.includes(metric)) continue;
-      const mtd = values['MTD'] || 0;
-      if (mtd > 0) {
+      
+      const mtd = cols[`${product} MTD`];
+      if (mtd && mtd > 0) {
         issues.push({
           name: metric,
-          mtd: typeof mtd === 'number' && mtd > 1000 ? (mtd / 1000).toFixed(0) + 'k' : mtd,
-          d1: values['D-1'] || 0,
-          d2: values['D-2'] || 0,
-          d3: values['D-3'] || 0,
-          d4: values['D-4'] || 0
+          mtd: mtd > 1000 ? (mtd / 1000).toFixed(0) + 'k' : Math.round(mtd),
+          d1: cols[`${product} D-1`] || 0,
+          d2: cols[`${product} D-2`] || 0,
+          d3: cols[`${product} D-3`] || 0,
+          d4: cols[`${product} D-4`] || 0
         });
       }
     }
     
-    // Sort by MTD descending and take top 5
     issues.sort((a, b) => (parseFloat(b.mtd) || 0) - (parseFloat(a.mtd) || 0));
     const topIssues = issues.slice(0, 5);
     
     if (topIssues.length === 0) {
-      return `<div class="card" style="grid-column:1/-1;text-align:center;padding:32px 16px;color:#9AA0AD;">No issue data available for ${product}</div>`;
+      return `<div class="card" style="grid-column:1/-1;text-align:center;padding:32px 16px;color:#9AA0AD;">No issues for ${product}</div>`;
     }
     
     const rows = topIssues.map((issue, idx) => {
@@ -373,7 +327,7 @@ function buildIssues() {
       const rankColor = product === 'Images' ? '#C07C12' : '#D23B3A';
       return `<div class="irow">
         <span class="irank" style="background:${rankBg};color:${rankColor};">${idx + 1}</span>
-        <div class="itxt"><div class="ititle">${issue.name}</div><div class="idesc">Issue tracking</div></div>
+        <div class="itxt"><div class="ititle">${issue.name}</div><div class="idesc">MTD tracking</div></div>
         <div class="imtd">${issue.mtd}</div>
         <div class="ichart"><div class="lc" data-pts="[${issue.d4}, ${issue.d3}, ${issue.d2}, ${issue.d1}]" data-labels='["D-4", "D-3", "D-2", "D-1"]' data-unit="" style="width:100%;height:28px;"></div></div>
       </div>`;
@@ -389,71 +343,81 @@ function buildIssues() {
 }
 
 function buildCharts() {
-  function build(el){
-    var pts=JSON.parse(el.getAttribute('data-pts')), labels=JSON.parse(el.getAttribute('data-labels')), unit=el.getAttribute('data-unit')||'';
-    var n=pts.length, mn=Math.min.apply(null,pts), mx=Math.max.apply(null,pts), rng=(mx-mn)||1;
-    var col=pts[n-1]>=pts[0]?'#E2504F':'#1D9E75';
-    var W=100,H=40,pX=3,pT=6,pB=7;
-    function X(i){return pX+i*(W-2*pX)/(n-1);}
-    function Y(v){return (H-pB)-((v-mn)/rng)*((H-pB)-pT);}
-    var lp=pts.map(function(v,i){return X(i).toFixed(2)+','+Y(v).toFixed(2);});
-    var area='M'+X(0).toFixed(2)+','+(H-pB)+' L'+lp.join(' L')+' L'+X(n-1).toFixed(2)+','+(H-pB)+' Z';
-    var gid='g'+Math.random().toString(36).slice(2,9);
-    var dots=pts.map(function(v,i){return '<circle cx="'+X(i).toFixed(2)+'" cy="'+Y(v).toFixed(2)+'" r="1.3" fill="'+col+'"/>';}).join('');
-    var svg='<svg viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;">'
-      +'<defs><linearGradient id="'+gid+'" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="'+col+'" stop-opacity="0.22"/><stop offset="1" stop-color="'+col+'" stop-opacity="0"/></linearGradient></defs>'
-      +'<path d="'+area+'" fill="url(#'+gid+')"/>'
-      +'<polyline points="'+lp.join(' ')+'" fill="none" stroke="'+col+'" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>'+dots+'</svg>';
-    var tip=document.createElement('div'); tip.className='lc-tip';
-    var cur=document.createElement('div'); cur.className='lc-cursor'; cur.style.background=col;
-    el.innerHTML=svg; el.appendChild(tip); el.appendChild(cur);
-    for(var i=0;i<n;i++){
-      var hit=document.createElement('div');
-      hit.style.cssText='position:absolute;top:0;bottom:0;left:'+((i-0.5)/n*100)+'%;width:'+(100/n)+'%;';
-      (function(idx){
-        hit.addEventListener('mouseenter',function(){
-          var lx=X(idx), ly=Y(pts[idx]);
-          tip.style.left=lx+'%'; tip.style.top=(ly/H*100)+'%'; tip.style.display='block';
-          tip.textContent=labels[idx]+' · '+pts[idx]+unit;
-          cur.style.left=lx+'%'; cur.style.top=(ly/H*100)+'%'; cur.style.display='block';
-        });
-      })(i);
+  document.querySelectorAll('.lc').forEach(el => {
+    const pts = JSON.parse(el.getAttribute('data-pts'));
+    const labels = JSON.parse(el.getAttribute('data-labels'));
+    const unit = el.getAttribute('data-unit') || '';
+    const n = pts.length, mn = Math.min(...pts), mx = Math.max(...pts), rng = (mx - mn) || 1;
+    const col = pts[n-1] >= pts[0] ? '#E2504F' : '#1D9E75';
+    const W = 100, H = 40, pX = 3, pT = 6, pB = 7;
+    
+    const X = i => pX + i * (W - 2*pX) / (n - 1);
+    const Y = v => (H - pB) - ((v - mn) / rng) * ((H - pB) - pT);
+    
+    const lp = pts.map((v, i) => `${X(i).toFixed(2)},${Y(v).toFixed(2)}`);
+    const area = `M${X(0).toFixed(2)},${H-pB} L${lp.join(' L')} L${X(n-1).toFixed(2)},${H-pB} Z`;
+    const gid = 'g' + Math.random().toString(36).slice(2, 9);
+    const dots = pts.map((v, i) => `<circle cx="${X(i).toFixed(2)}" cy="${Y(v).toFixed(2)}" r="1.3" fill="${col}"/>`).join('');
+    
+    const svg = `<svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" width="100%" height="100%" style="display:block;overflow:visible;">
+      <defs><linearGradient id="${gid}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${col}" stop-opacity="0.22"/><stop offset="1" stop-color="${col}" stop-opacity="0"/></linearGradient></defs>
+      <path d="${area}" fill="url(#${gid})"/>
+      <polyline points="${lp.join(' ')}" fill="none" stroke="${col}" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/>
+      ${dots}
+    </svg>`;
+    
+    el.innerHTML = svg;
+    const tip = document.createElement('div');
+    tip.className = 'lc-tip';
+    const cur = document.createElement('div');
+    cur.className = 'lc-cursor';
+    cur.style.background = col;
+    el.appendChild(tip);
+    el.appendChild(cur);
+    
+    for (let i = 0; i < n; i++) {
+      const hit = document.createElement('div');
+      hit.style.cssText = `position:absolute;top:0;bottom:0;left:${(i-0.5)/n*100}%;width:${100/n}%;`;
+      hit.addEventListener('mouseenter', () => {
+        tip.style.left = X(i) + '%';
+        tip.style.top = (Y(pts[i])/H*100) + '%';
+        tip.style.display = 'block';
+        tip.textContent = `${labels[i]} · ${pts[i]}${unit}`;
+        cur.style.left = X(i) + '%';
+        cur.style.top = (Y(pts[i])/H*100) + '%';
+        cur.style.display = 'block';
+      });
       el.appendChild(hit);
     }
-    el.addEventListener('mouseleave',function(){tip.style.display='none';cur.style.display='none';});
-  }
-  document.querySelectorAll('.lc').forEach(build);
+    el.addEventListener('mouseleave', () => {
+      tip.style.display = 'none';
+      cur.style.display = 'none';
+    });
+  });
 }
 
 function updateDateTime() {
   const now = new Date();
-  const options = { year: 'numeric', month: 'short', day: 'numeric' };
-  document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US', options);
+  document.getElementById('dateTime').textContent = now.toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
   document.getElementById('lastUpdate').textContent = now.toLocaleTimeString();
 }
 
 function setupAutoRefresh() {
   let countdown = 300;
-  
   const updateTimer = setInterval(() => {
     countdown--;
     const mins = Math.floor(countdown / 60);
     const secs = countdown % 60;
     document.getElementById('refreshInfo').textContent = `Live • Auto-refresh in ${mins}:${secs.toString().padStart(2, '0')}`;
-    
     if (countdown <= 0) {
       clearInterval(updateTimer);
       loadDashboard();
     }
   }, 1000);
-  
   refreshTimer = updateTimer;
 }
 
 document.addEventListener('DOMContentLoaded', loadDashboard);
-
-window.addEventListener('beforeunload', () => {
-  if (refreshTimer) clearInterval(refreshTimer);
-});
+window.addEventListener('beforeunload', () => { if (refreshTimer) clearInterval(refreshTimer); });
 </script>
 </body></html>
