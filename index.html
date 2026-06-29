@@ -40,11 +40,11 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .psub{font-size:10px;color:#9AA0AD;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
 .picon{display:inline-flex;width:30px;height:30px;border-radius:8px;align-items:center;justify-content:center;flex:none;}
 
-.metric{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin:11px 0 1px;}
+.metric{display:flex;flex-direction:column;align-items:flex-end;gap:2px;margin:11px 0 1px;text-align:right;}
 .big{font-size:29px;font-weight:900;letter-spacing:-1px;line-height:1;}
 .munit{font-size:11px;color:#646B7A;font-weight:700;}
 
-.chart-cap{font-size:9px;font-weight:600;color:#AAB0BC;text-transform:uppercase;letter-spacing:.05em;margin:9px 0 2px;}
+.chart-cap{font-size:9px;font-weight:600;color:#AAB0BC;text-transform:uppercase;letter-spacing:.05em;margin:9px 0 2px;text-align:right;}
 .card-foot{display:flex;gap:18px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(20,25,40,.07);}
 .ftlbl{font-size:9px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
 .ftval{font-size:14px;font-weight:800;color:#1C2230;margin-top:1px;}
@@ -238,7 +238,7 @@ function buildSLA(){
     const m=v('SLA Breach%',p,'MTD'),m1=v('SLA Breach%',p,'M-1'),m2=v('SLA Breach%',p,'M-2');
     const pts=days5('SLA Breach%',p), tone=slaTone(m);
     const inner=head(p,'SLA breach')
-      +'<div class="metric"><span class="big" style="color:'+TONE[tone]+';">'+Math.round(m)+'</span><span class="munit">% MTD</span></div>'
+      +'<div class="metric"><span class="munit">% MTD</span><span class="big" style="color:'+TONE[tone]+';">'+Math.round(m)+'</span></div>'
       +'<div class="chart-cap">Last 5 days</div>'
       +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-unit="%" data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
       +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+Math.round(m2)+'%</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+Math.round(m1)+'%</div></div></div>';
@@ -251,7 +251,7 @@ function buildPendency(){
     const m=v('Pendency',p,'MTD'),m1=v('Pendency',p,'M-1'),m2=v('Pendency',p,'M-2');
     const pts=days5('Pendency',p), tone=trendTone(pts);
     const inner=head(p,'Pendency')
-      +'<div class="metric"><span class="big" style="color:'+TONE[tone]+';">'+fmt(m)+'</span><span class="munit">MTD</span></div>'
+      +'<div class="metric"><span class="munit">MTD</span><span class="big" style="color:'+TONE[tone]+';">'+fmt(m)+'</span></div>'
       +'<div class="chart-cap">Last 5 days</div>'
       +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
       +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+fmt(m2)+'</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+fmt(m1)+'</div></div></div>';
@@ -321,6 +321,10 @@ function buildCharts(){
     const tip=document.createElement('div');tip.className='lc-tip';
     const cur=document.createElement('div');cur.className='lc-cursor';cur.style.background=col;
     el.appendChild(tip);el.appendChild(cur);
+    /* Always-visible highlighted dot on the latest day (D-1 = last point) */
+    const hl=document.createElement('div');
+    hl.style.cssText='position:absolute;width:8px;height:8px;border-radius:50%;background:'+col+';border:2px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.12),0 1px 3px rgba(0,0,0,.25);transform:translate(-50%,-50%);left:'+X(n-1)+'%;top:'+(Y(pts[n-1])/H*100)+'%;pointer-events:none;z-index:3;';
+    el.appendChild(hl);
     for(let i=0;i<n;i++){const hit=document.createElement('div');hit.style.cssText='position:absolute;top:0;bottom:0;left:'+((i-0.5)/n*100)+'%;width:'+(100/n)+'%;cursor:pointer;';
       hit.addEventListener('mouseenter',()=>{
         const xPct=X(i), yPct=Y(pts[i])/H*100;
