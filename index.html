@@ -40,7 +40,7 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .psub{font-size:10px;color:#9AA0AD;font-weight:600;text-transform:uppercase;letter-spacing:.04em;margin-top:1px;}
 .picon{display:inline-flex;width:30px;height:30px;border-radius:8px;align-items:center;justify-content:center;flex:none;}
 
-.metric{display:flex;align-items:baseline;gap:6px;margin:11px 0 1px;}
+.metric{display:flex;align-items:baseline;justify-content:space-between;gap:6px;margin:11px 0 1px;}
 .big{font-size:29px;font-weight:900;letter-spacing:-1px;line-height:1;}
 .munit{font-size:11px;color:#646B7A;font-weight:700;}
 
@@ -48,6 +48,9 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .card-foot{display:flex;gap:18px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(20,25,40,.07);}
 .ftlbl{font-size:9px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
 .ftval{font-size:14px;font-weight:800;color:#1C2230;margin-top:1px;}
+.ft-hi .ftval{font-size:16px;font-weight:900;}
+.ft-dim{opacity:.55;}
+.ft-dim .ftval{font-size:13px;font-weight:700;}
 
 .ptl{color:#9AA0AD;font-weight:700;font-size:10px;text-transform:uppercase;letter-spacing:.03em;}
 .segt{width:100%;border-collapse:collapse;margin-top:10px;font-size:11px;}
@@ -145,9 +148,9 @@ function toneFromTo(oldest, newest){
   return 'amber';
 }
 function trendTone(pts){
-  /* pts are display-order; for SLA/Pendency that's D-1..D-5 = newest→oldest,
-     so newest is pts[0] and oldest is the last non-undefined point. */
-  const newest=pts[0], oldest=pts[pts.length-1];
+  /* Display order is now D-5..D-1 = oldest→newest,
+     so oldest is pts[0] and newest is pts[last]. */
+  const oldest=pts[0], newest=pts[pts.length-1];
   return toneFromTo(oldest, newest);
 }
 
@@ -209,9 +212,9 @@ async function fetchData(){
 
 function v(metric,p,c){ return data[metric]?.[p]?.[c]??0; }
 function fmt(n){ if(n>=1000)return (n/1000).toFixed(1).replace(/\.0$/,'')+'k'; return Math.round(n); }
-function days5(metric,p){ return [v(metric,p,'D-1'),v(metric,p,'D-2'),v(metric,p,'D-3'),v(metric,p,'D-4'),v(metric,p,'D-5')]; }
-const DAY_LABELS='["D-1","D-2","D-3","D-4","D-5"]';
-const ISSUE_DAY_LABELS='["D-1","D-2","D-3","D-4"]';
+function days5(metric,p){ return [v(metric,p,'D-5'),v(metric,p,'D-4'),v(metric,p,'D-3'),v(metric,p,'D-2'),v(metric,p,'D-1')]; }
+const DAY_LABELS='["D-5","D-4","D-3","D-2","D-1"]';
+const ISSUE_DAY_LABELS='["D-4","D-3","D-2","D-1"]';
 
 function render(){ buildTitle(); buildSLA(); buildPendency(); buildP95(); buildIssues(); buildCharts(); }
 
@@ -238,7 +241,7 @@ function buildSLA(){
       +'<div class="metric"><span class="big" style="color:'+TONE[tone]+';">'+Math.round(m)+'</span><span class="munit">% MTD</span></div>'
       +'<div class="chart-cap">Last 5 days</div>'
       +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-unit="%" data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
-      +'<div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">'+Math.round(m1)+'%</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">'+Math.round(m2)+'%</div></div></div>';
+      +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+Math.round(m2)+'%</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+Math.round(m1)+'%</div></div></div>';
     return card(p,inner);
   }).join('');
 }
@@ -251,7 +254,7 @@ function buildPendency(){
       +'<div class="metric"><span class="big" style="color:'+TONE[tone]+';">'+fmt(m)+'</span><span class="munit">MTD</span></div>'
       +'<div class="chart-cap">Last 5 days</div>'
       +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
-      +'<div class="card-foot"><div><div class="ftlbl">last month</div><div class="ftval">'+fmt(m1)+'</div></div><div><div class="ftlbl">2 mo ago</div><div class="ftval">'+fmt(m2)+'</div></div></div>';
+      +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+fmt(m2)+'</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+fmt(m1)+'</div></div></div>';
     return card(p,inner);
   }).join('');
 }
@@ -275,15 +278,23 @@ function buildP95(){
 }
 
 function buildIssues(){
+  /* RAG by last-day movement: D-1 lower than D-2 = green (improving),
+     equal = amber, higher = red (worsening). */
+  function issueTone(d1,d2){
+    if(d1<d2) return 'green';
+    if(d1>d2) return 'red';
+    return 'amber';
+  }
   document.getElementById('issuesGrid').innerHTML=['Images','360','Video'].map(p=>{
     const t=THEME[p];
-    /* Trend shows D-1..D-4 (newest→oldest). D-5 dropped (was always 0). */
-    const issues=(data.issues[p]||[]).map(x=>({name:x.name,mtd:x.vals.MTD,pts:[x.vals['D-1'],x.vals['D-2'],x.vals['D-3'],x.vals['D-4']]}))
+    /* Trend shows D-4..D-1 (oldest→newest). D-5 dropped (was always 0). */
+    const issues=(data.issues[p]||[]).map(x=>({name:x.name,mtd:x.vals.MTD,
+      d1:x.vals['D-1'],d2:x.vals['D-2'],
+      pts:[x.vals['D-4'],x.vals['D-3'],x.vals['D-2'],x.vals['D-1']]}))
       .sort((a,b)=>b.mtd-a.mtd).slice(0,5);
     if(!issues.length) return '';
     const rows=issues.map((iss,idx)=>{
-      /* RAG: oldest=D-4=pts[last], newest=D-1=pts[0] */
-      const tone=toneFromTo(iss.pts[iss.pts.length-1], iss.pts[0]);
+      const tone=issueTone(iss.d1,iss.d2);
       return '<div class="irow"><span class="irank" style="background:'+t.iconBg+';color:'+t.accent+';">'+(idx+1)+'</span><div class="itxt"><div class="ititle">'+iss.name+'</div></div><div class="imtd">'+fmt(iss.mtd)+'</div><div class="ichart"><div class="lc" data-pts="['+iss.pts.join(',')+']" data-labels=\''+ISSUE_DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:26px;"></div></div></div>';
     }).join('');
     const inner='<div class="ihead"><span class="picon" style="width:24px;height:24px;background:'+t.iconBg+';color:'+t.accent+';">'+ICONS[p]+'</span><span class="pname" style="color:'+t.name+';">'+p+'</span></div>'+rows;
