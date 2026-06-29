@@ -69,8 +69,8 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .ichart{width:54px;flex:none;}
 
 .lc{position:relative;cursor:crosshair;}
-.lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);}
-.lc-tip:after{content:"";position:absolute;left:50%;top:100%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1C2230;}
+.lc-tip{position:absolute;transform:translate(-50%,-130%);background:#1C2230;color:#fff;font-size:11px;font-weight:700;padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;display:none;z-index:5;box-shadow:0 2px 8px rgba(0,0,0,.18);--arrow-x:50%;}
+.lc-tip:after{content:"";position:absolute;left:var(--arrow-x);top:100%;transform:translateX(-50%);border:4px solid transparent;border-top-color:#1C2230;}
 .lc-cursor{position:absolute;width:7px;height:7px;border-radius:50%;border:2px solid #fff;transform:translate(-50%,-50%);pointer-events:none;display:none;z-index:4;}
 
 .legend{font-size:10px;color:#646B7A;font-weight:600;white-space:nowrap;}
@@ -107,7 +107,7 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
     </div>
     <div class="grid" id="p95Grid"></div>
 
-    <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">Top Issues</span></div><span class="sect-note">MTD · 5-day trend</span></div>
+    <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">Top Issues</span></div><span class="sect-note">MTD · 4-day trend</span></div>
     <div class="grid" id="issuesGrid"></div>
 
     <div class="foot">Generated from Central Analytics · trend charts show the last 5 days (D-5 → D-1)</div>
@@ -136,12 +136,19 @@ const ICONS={
 /* Performance tone → line color. Good=green, Okay=amber, Bad=red */
 const TONE={green:'#1D9E75', amber:'#E0A219', red:'#E2504F'};
 function slaTone(v){ return v<30?'green':v<=50?'amber':'red'; }
-function trendTone(pts){
-  const a=pts.find(x=>x>0)??pts[0], b=pts[pts.length-1];
-  if(!a){ return b>0?'amber':'green'; }
-  if(b<=a*0.95) return 'green';
-  if(b>=a*1.05) return 'red';
+/* Judges direction from oldest→newest. For lower-is-better metrics:
+   falling = green (improving), rising = red (worsening), flat = amber. */
+function toneFromTo(oldest, newest){
+  if(!oldest){ return newest>0?'amber':'green'; }
+  if(newest<=oldest*0.95) return 'green';
+  if(newest>=oldest*1.05) return 'red';
   return 'amber';
+}
+function trendTone(pts){
+  /* pts are display-order; for SLA/Pendency that's D-1..D-5 = newest→oldest,
+     so newest is pts[0] and oldest is the last non-undefined point. */
+  const newest=pts[0], oldest=pts[pts.length-1];
+  return toneFromTo(oldest, newest);
 }
 
 let data={};
@@ -202,8 +209,9 @@ async function fetchData(){
 
 function v(metric,p,c){ return data[metric]?.[p]?.[c]??0; }
 function fmt(n){ if(n>=1000)return (n/1000).toFixed(1).replace(/\.0$/,'')+'k'; return Math.round(n); }
-function days5(metric,p){ return [v(metric,p,'D-5'),v(metric,p,'D-4'),v(metric,p,'D-3'),v(metric,p,'D-2'),v(metric,p,'D-1')]; }
-const DAY_LABELS='["D-5","D-4","D-3","D-2","D-1"]';
+function days5(metric,p){ return [v(metric,p,'D-1'),v(metric,p,'D-2'),v(metric,p,'D-3'),v(metric,p,'D-4'),v(metric,p,'D-5')]; }
+const DAY_LABELS='["D-1","D-2","D-3","D-4","D-5"]';
+const ISSUE_DAY_LABELS='["D-1","D-2","D-3","D-4"]';
 
 function render(){ buildTitle(); buildSLA(); buildPendency(); buildP95(); buildIssues(); buildCharts(); }
 
@@ -269,12 +277,14 @@ function buildP95(){
 function buildIssues(){
   document.getElementById('issuesGrid').innerHTML=['Images','360','Video'].map(p=>{
     const t=THEME[p];
-    const issues=(data.issues[p]||[]).map(x=>({name:x.name,mtd:x.vals.MTD,pts:[x.vals['D-5'],x.vals['D-4'],x.vals['D-3'],x.vals['D-2'],x.vals['D-1']]}))
+    /* Trend shows D-1..D-4 (newest→oldest). D-5 dropped (was always 0). */
+    const issues=(data.issues[p]||[]).map(x=>({name:x.name,mtd:x.vals.MTD,pts:[x.vals['D-1'],x.vals['D-2'],x.vals['D-3'],x.vals['D-4']]}))
       .sort((a,b)=>b.mtd-a.mtd).slice(0,5);
     if(!issues.length) return '';
     const rows=issues.map((iss,idx)=>{
-      const tone=trendTone(iss.pts);
-      return '<div class="irow"><span class="irank" style="background:'+t.iconBg+';color:'+t.accent+';">'+(idx+1)+'</span><div class="itxt"><div class="ititle">'+iss.name+'</div></div><div class="imtd">'+fmt(iss.mtd)+'</div><div class="ichart"><div class="lc" data-pts="['+iss.pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:26px;"></div></div></div>';
+      /* RAG: oldest=D-4=pts[last], newest=D-1=pts[0] */
+      const tone=toneFromTo(iss.pts[iss.pts.length-1], iss.pts[0]);
+      return '<div class="irow"><span class="irank" style="background:'+t.iconBg+';color:'+t.accent+';">'+(idx+1)+'</span><div class="itxt"><div class="ititle">'+iss.name+'</div></div><div class="imtd">'+fmt(iss.mtd)+'</div><div class="ichart"><div class="lc" data-pts="['+iss.pts.join(',')+']" data-labels=\''+ISSUE_DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:26px;"></div></div></div>';
     }).join('');
     const inner='<div class="ihead"><span class="picon" style="width:24px;height:24px;background:'+t.iconBg+';color:'+t.accent+';">'+ICONS[p]+'</span><span class="pname" style="color:'+t.name+';">'+p+'</span></div>'+rows;
     return '<div class="icard" style="background:'+t.bg+';border-color:'+t.border+';border-left-color:'+t.accent+';">'+inner+'</div>';
@@ -301,7 +311,22 @@ function buildCharts(){
     const cur=document.createElement('div');cur.className='lc-cursor';cur.style.background=col;
     el.appendChild(tip);el.appendChild(cur);
     for(let i=0;i<n;i++){const hit=document.createElement('div');hit.style.cssText='position:absolute;top:0;bottom:0;left:'+((i-0.5)/n*100)+'%;width:'+(100/n)+'%;cursor:pointer;';
-      hit.addEventListener('mouseenter',()=>{tip.style.left=X(i)+'%';tip.style.top=(Y(pts[i])/H*100)+'%';tip.style.display='block';tip.textContent=labels[i]+' · '+fmt(pts[i])+unit;cur.style.left=X(i)+'%';cur.style.top=(Y(pts[i])/H*100)+'%';cur.style.display='block';});
+      hit.addEventListener('mouseenter',()=>{
+        const xPct=X(i), yPct=Y(pts[i])/H*100;
+        // Clamp tooltip horizontally so edge points don't overflow the card.
+        let tx='-50%', ax='50%';
+        if(i===0){ tx='2px'; ax='10px'; }                 // leftmost (D-1): anchor left
+        else if(i===n-1){ tx='calc(-100% - 2px)'; ax='calc(100% - 10px)'; } // rightmost: anchor right
+        tip.style.left=xPct+'%';
+        tip.style.top=yPct+'%';
+        tip.style.transform='translate('+tx+',-130%)';
+        tip.style.setProperty('--arrow-x',ax);
+        tip.style.display='block';
+        tip.textContent=labels[i]+' · '+fmt(pts[i])+unit;
+        cur.style.left=xPct+'%';
+        cur.style.top=yPct+'%';
+        cur.style.display='block';
+      });
       el.appendChild(hit);}
     el.addEventListener('mouseleave',()=>{tip.style.display='none';cur.style.display='none';});
   });
