@@ -44,7 +44,9 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .big{font-size:29px;font-weight:900;letter-spacing:-1px;line-height:1;}
 .munit{font-size:11px;color:#646B7A;font-weight:700;}
 
-.chart-cap{font-size:9px;font-weight:600;color:#AAB0BC;text-transform:uppercase;letter-spacing:.05em;margin:9px 0 2px;text-align:right;}
+.chart-cap{font-size:9px;font-weight:600;color:#AAB0BC;text-transform:uppercase;letter-spacing:.05em;margin:9px 0 2px;text-align:left;}
+.lc-axis{display:flex;justify-content:space-between;padding:0 2px;margin-top:3px;}
+.lc-axis span{font-size:8px;color:#AAB0BC;font-weight:700;letter-spacing:.02em;}
 .card-foot{display:flex;gap:18px;margin-top:9px;padding-top:9px;border-top:1px solid rgba(20,25,40,.07);}
 .ftlbl{font-size:9px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
 .ftval{font-size:14px;font-weight:800;color:#1C2230;margin-top:1px;}
@@ -58,7 +60,7 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .svh{text-align:right;}
 .sg{font-size:11px;color:#646B7A;font-weight:600;padding:5px 3px;border-top:1px solid rgba(20,25,40,.06);}
 .sv{text-align:right;padding:5px 3px;border-top:1px solid rgba(20,25,40,.06);}
-.sv span{font-size:10px;font-weight:800;padding:2px 7px;border-radius:6px;display:inline-block;}
+.sv span{font-size:10px;font-weight:800;padding:2px 6px;border-radius:6px;display:inline-block;white-space:nowrap;}
 
 /* ---- Issues ---- */
 .icard{padding:0;overflow:hidden;border-radius:14px;border:1px solid;border-left-width:5px;}
@@ -106,7 +108,7 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
     <div class="grid" id="pendencyGrid"></div>
 
     <div class="sect"><div class="sect-l"><span class="sect-bar"></span><span class="sect-t">Delivery Time</span></div>
-      <span class="legend"><span class="ld" style="background:#1D9E75;"></span>&lt;24h&nbsp; <span class="ld" style="background:#E0A219;"></span>24–72h&nbsp; <span class="ld" style="background:#E2504F;"></span>&gt;72h</span>
+      <span class="legend"><span class="ld" style="background:#1D9E75;"></span>&lt;6 hr&nbsp; <span class="ld" style="background:#E0A219;"></span>6–12 hr&nbsp; <span class="ld" style="background:#E2504F;"></span>&gt;12 hr</span>
     </div>
     <div class="grid" id="p95Grid"></div>
 
@@ -215,6 +217,7 @@ function fmt(n){ if(n>=1000)return (n/1000).toFixed(1).replace(/\.0$/,'')+'k'; r
 function days5(metric,p){ return [v(metric,p,'D-5'),v(metric,p,'D-4'),v(metric,p,'D-3'),v(metric,p,'D-2'),v(metric,p,'D-1')]; }
 const DAY_LABELS='["D-5","D-4","D-3","D-2","D-1"]';
 const ISSUE_DAY_LABELS='["D-4","D-3","D-2","D-1"]';
+function axisRow(labelsJson){ return '<div class="lc-axis">'+JSON.parse(labelsJson).map(function(l){return '<span>'+l+'</span>';}).join('')+'</div>'; }
 
 function render(){ buildTitle(); buildSLA(); buildPendency(); buildP95(); buildIssues(); buildCharts(); }
 
@@ -238,9 +241,10 @@ function buildSLA(){
     const m=v('SLA Breach%',p,'MTD'),m1=v('SLA Breach%',p,'M-1'),m2=v('SLA Breach%',p,'M-2');
     const pts=days5('SLA Breach%',p), tone=slaTone(m);
     const inner=head(p,'SLA breach')
-      +'<div class="metric"><span class="munit">% MTD</span><span class="big" style="color:'+TONE[tone]+';">'+Math.round(m)+'</span></div>'
-      +'<div class="chart-cap">Last 5 days</div>'
+      +'<div class="metric"><span class="munit">MTD</span><span class="big" style="color:'+TONE[tone]+';">'+Math.round(m)+'%</span></div>'
+      +'<div class="chart-cap">Last 5 days trendline</div>'
       +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-unit="%" data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
+      +axisRow(DAY_LABELS)
       +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+Math.round(m2)+'%</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+Math.round(m1)+'%</div></div></div>';
     return card(p,inner);
   }).join('');
@@ -252,27 +256,29 @@ function buildPendency(){
     const pts=days5('Pendency',p), tone=trendTone(pts);
     const inner=head(p,'Pendency')
       +'<div class="metric"><span class="munit">MTD</span><span class="big" style="color:'+TONE[tone]+';">'+fmt(m)+'</span></div>'
-      +'<div class="chart-cap">Last 5 days</div>'
+      +'<div class="chart-cap">Last 5 days trendline</div>'
       +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:46px;"></div>'
+      +axisRow(DAY_LABELS)
       +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+fmt(m2)+'</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+fmt(m1)+'</div></div></div>';
     return card(p,inner);
   }).join('');
 }
 
 function buildP95(){
-  const tc=v=>v<24?'#1D9E75':v<=72?'#E0A219':'#E2504F';
-  const bgc=v=>v<24?'#E4F4EC':v<=72?'#FBF2DF':'#FCEBEB';
+  const tc=v=>v<6?'#1D9E75':v<=12?'#E0A219':'#E2504F';
+  const bgc=v=>v<6?'#E4F4EC':v<=12?'#FBF2DF':'#FCEBEB';
+  const hrs=v=>fmt(v)+' hr';
   document.getElementById('p95Grid').innerHTML=['Images','360','Video'].map(p=>{
     const p95=v('P95 Delivery Time(Hrs)',p,'MTD'),p99=v('P99 Delivery Time(Hrs)',p,'MTD');
     const e5=v('P95 Delivery Time(Hrs)',p,'ENT'),e9=v('P99 Delivery Time(Hrs)',p,'ENT');
     const m5=v('P95 Delivery Time(Hrs)',p,'MID'),m9=v('P99 Delivery Time(Hrs)',p,'MID');
     const s5=v('P95 Delivery Time(Hrs)',p,'SMB'),s9=v('P99 Delivery Time(Hrs)',p,'SMB');
     const inner=head(p,'')
-      +'<div style="display:flex;gap:18px;margin:9px 0 0;padding-top:9px;border-top:1px solid rgba(20,25,40,.07);"><div><div class="ptl">P95</div><div style="font-size:17px;font-weight:800;color:'+tc(p95)+';margin-top:2px;">'+fmt(p95)+'</div></div><div><div class="ptl">P99</div><div style="font-size:17px;font-weight:800;color:'+tc(p99)+';margin-top:2px;">'+fmt(p99)+'</div></div></div>'
+      +'<div style="display:flex;gap:18px;margin:9px 0 0;padding-top:9px;border-top:1px solid rgba(20,25,40,.07);"><div><div class="ptl">P95</div><div style="font-size:17px;font-weight:800;color:'+tc(p95)+';margin-top:2px;">'+hrs(p95)+'</div></div><div><div class="ptl">P99</div><div style="font-size:17px;font-weight:800;color:'+tc(p99)+';margin-top:2px;">'+hrs(p99)+'</div></div></div>'
       +'<table class="segt"><tr><td class="sgh">Seg</td><td class="svh">P95</td><td class="svh">P99</td></tr>'
-      +'<tr><td class="sg">ENT</td><td class="sv"><span style="background:'+bgc(e5)+';color:'+tc(e5)+';">'+fmt(e5)+'</span></td><td class="sv"><span style="background:'+bgc(e9)+';color:'+tc(e9)+';">'+fmt(e9)+'</span></td></tr>'
-      +'<tr><td class="sg">MID</td><td class="sv"><span style="background:'+bgc(m5)+';color:'+tc(m5)+';">'+fmt(m5)+'</span></td><td class="sv"><span style="background:'+bgc(m9)+';color:'+tc(m9)+';">'+fmt(m9)+'</span></td></tr>'
-      +'<tr><td class="sg">SMB</td><td class="sv"><span style="background:'+bgc(s5)+';color:'+tc(s5)+';">'+fmt(s5)+'</span></td><td class="sv"><span style="background:'+bgc(s9)+';color:'+tc(s9)+';">'+fmt(s9)+'</span></td></tr></table>';
+      +'<tr><td class="sg">ENT</td><td class="sv"><span style="background:'+bgc(e5)+';color:'+tc(e5)+';">'+hrs(e5)+'</span></td><td class="sv"><span style="background:'+bgc(e9)+';color:'+tc(e9)+';">'+hrs(e9)+'</span></td></tr>'
+      +'<tr><td class="sg">MID</td><td class="sv"><span style="background:'+bgc(m5)+';color:'+tc(m5)+';">'+hrs(m5)+'</span></td><td class="sv"><span style="background:'+bgc(m9)+';color:'+tc(m9)+';">'+hrs(m9)+'</span></td></tr>'
+      +'<tr><td class="sg">SMB</td><td class="sv"><span style="background:'+bgc(s5)+';color:'+tc(s5)+';">'+hrs(s5)+'</span></td><td class="sv"><span style="background:'+bgc(s9)+';color:'+tc(s9)+';">'+hrs(s9)+'</span></td></tr></table>';
     return card(p,inner,'card');
   }).join('');
 }
