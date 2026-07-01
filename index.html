@@ -204,10 +204,12 @@ async function fetchData(){
       cells=[cells[0],cells[1],...vals];
     }
     const v={}; for(let j=0;j<colNames.length;j++) v[colNames[j]]=parseNumber(cells[2+j]);
+    const ml=metric.toLowerCase();
     if(metric.includes('SLA')) data['SLA Breach%'][product]=v;
     else if(metric.includes('Pendency')) data['Pendency'][product]=v;
     else if(metric.includes('P95')) data['P95 Delivery Time(Hrs)'][product]=v;
     else if(metric.includes('P99')) data['P99 Delivery Time(Hrs)'][product]=v;
+    else if(ml.includes('top 5 issue')||ml.includes('top issue')) { /* section header row — skip */ }
     else { (data.issues[product]=data.issues[product]||[]).push({name:metric,vals:v}); }
   }
 }
@@ -297,6 +299,7 @@ function buildIssues(){
     const issues=(data.issues[p]||[]).map(x=>({name:x.name,mtd:x.vals.MTD,
       d1:x.vals['D-1'],d2:x.vals['D-2'],
       pts:[x.vals['D-4'],x.vals['D-3'],x.vals['D-2'],x.vals['D-1']]}))
+      .filter(x=>x.mtd>0||x.d1>0||x.d2>0||x.pts.some(v=>v>0))
       .sort((a,b)=>b.mtd-a.mtd).slice(0,5);
     if(!issues.length) return '';
     const rows=issues.map((iss,idx)=>{
