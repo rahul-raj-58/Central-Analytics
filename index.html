@@ -18,13 +18,13 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .refresh-fab:disabled{opacity:.7;cursor:default;}
 .refresh-fab svg{width:14px;height:14px;}
 
-.sect{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:26px 0 12px;}
+.sect{display:flex;align-items:center;justify-content:space-between;gap:9px;margin:18px 0 10px;}
 .sect-l{display:flex;align-items:center;gap:9px;}
 .sect-bar{width:5px;height:22px;border-radius:3px;background:#6C4BD9;}
 .sect-t{font-size:20px;font-weight:800;color:#1C2230;letter-spacing:-.1px;}
 .sect-note{font-size:13px;font-weight:600;color:#9AA0AD;text-transform:uppercase;letter-spacing:.04em;}
 
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;align-items:start;}
 @media(max-width:600px){
   .grid{grid-template-columns:1fr;gap:10px;}
   .wrap{padding:12px 6px 24px;}
@@ -56,11 +56,11 @@ body{margin:0;background:#F4F5F8;color:#1C2230;font-family:'Inter',-apple-system
 .lc-axis{display:flex;justify-content:space-between;padding:0 2px;margin-top:4px;}
 .lc-axis span{font-size:12px;color:#AAB0BC;font-weight:700;letter-spacing:.02em;}
 .card-foot{display:flex;gap:22px;margin-top:12px;padding-top:12px;border-top:1px solid rgba(20,25,40,.07);}
-.ftlbl{font-size:12px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
-.ftval{font-size:20px;font-weight:800;color:#1C2230;margin-top:2px;}
-.ft-hi .ftval{font-size:24px;font-weight:900;}
+.ftlbl{font-size:13px;color:#9AA0AD;text-transform:uppercase;letter-spacing:.03em;font-weight:600;}
+.ftval{font-size:28px;font-weight:800;color:#1C2230;margin-top:3px;}
+.ft-hi .ftval{font-size:34px;font-weight:900;}
 .ft-dim{opacity:.55;}
-.ft-dim .ftval{font-size:18px;font-weight:700;}
+.ft-dim .ftval{font-size:26px;font-weight:700;}
 
 .ptl{color:#9AA0AD;font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.03em;}
 .segt{width:100%;border-collapse:collapse;margin-top:12px;font-size:15px;}
@@ -250,8 +250,7 @@ function buildSLA(){
     const pts=days5('SLA Breach%',p), tone=slaTone(m);
     const inner=head(p,'SLA breach')
       +'<div class="metric"><span class="munit">MTD</span><span class="big" style="color:'+TONE[tone]+';">'+Math.round(m)+'%</span></div>'
-      +'<div class="chart-cap">Last 5 days trendline</div>'
-      +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-unit="%" data-tone="'+tone+'" style="width:100%;height:68px;"></div>'
+      +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-unit="%" data-tone="'+tone+'" style="width:100%;height:68px;margin-top:12px;"></div>'
       +axisRow(DAY_LABELS)
       +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+Math.round(m2)+'%</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+Math.round(m1)+'%</div></div></div>';
     return card(p,inner);
@@ -264,8 +263,7 @@ function buildPendency(){
     const pts=days5('Pendency',p), tone=trendTone(pts);
     const inner=head(p,'Pendency')
       +'<div class="metric"><span class="munit">MTD</span><span class="big" style="color:'+TONE[tone]+';">'+fmt(m)+'</span></div>'
-      +'<div class="chart-cap">Last 5 days trendline</div>'
-      +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:68px;"></div>'
+      +'<div class="lc" data-pts="['+pts.join(',')+']" data-labels=\''+DAY_LABELS+'\' data-tone="'+tone+'" style="width:100%;height:68px;margin-top:12px;"></div>'
       +axisRow(DAY_LABELS)
       +'<div class="card-foot"><div class="ft-dim"><div class="ftlbl">2 mo ago</div><div class="ftval">'+fmt(m2)+'</div></div><div class="ft-hi"><div class="ftlbl">last month</div><div class="ftval">'+fmt(m1)+'</div></div></div>';
     return card(p,inner);
