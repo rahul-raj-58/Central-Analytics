@@ -29,7 +29,7 @@ body{margin:0;background:#F4F5F8;color:#0F172A;font-family:'Inter',-apple-system
 .sec-note{font-size:13px;color:#94A3B8;font-weight:500;margin-left:2px;}
 
 /* ---- KPI grid & cards ---- */
-.kpi-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;}
+.kpi-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;}
 .kpi{background:#fff;border:1px solid #E9EBF0;border-radius:12px;padding:16px 16px 14px;box-shadow:0 1px 2px rgba(16,24,40,.04);}
 .kpi-label{font-size:12px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;}
 .kpi-mid{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-top:8px;}
@@ -50,6 +50,9 @@ body{margin:0;background:#F4F5F8;color:#0F172A;font-family:'Inter',-apple-system
 .iss-dot{width:9px;height:9px;border-radius:50%;flex:none;}
 .iss-val{font-size:18px;font-weight:800;color:#0F172A;min-width:48px;text-align:right;}
 
+@media(max-width:1100px){
+  .kpi-grid{grid-template-columns:repeat(3,1fr);}
+}
 @media(max-width:900px){
   .kpi-grid{grid-template-columns:repeat(2,1fr);}
   .iss-grid{grid-template-columns:1fr;}
@@ -141,7 +144,7 @@ async function fetchData(){
   const url='https://docs.google.com/spreadsheets/d/e/2PACX-1vRW-XqDlvrKPrmev5u9X44Pg_qQIu1fzDmCoszOUVAF98yW7esDACb6rUeI6oGybBnZrnFG5477UhzG/pub?gid=2034010422&single=true&output=csv';
   const res=await fetch(url); const csv=await res.text();
   const lines=csv.split('\n').filter(l=>l.trim());
-  data={'SLA Breach%':{},'Pendency':{},'P95 Delivery Time(Hrs)':{},'P99 Delivery Time(Hrs)':{},issues:{}};
+  data={'SLA Breach%':{},'SLA QC%':{},'Pendency':{},'P95 Delivery Time(Hrs)':{},'P99 Delivery Time(Hrs)':{},issues:{}};
   const header=parseCSVAdvanced(lines[0]); const EXPECTED=header.length;
   const colNames=['Target','MTD','ENT','MID','SMB','D-1','D-2','D-3','D-4','D-5','M-1','M-2'];
   let product='';
@@ -161,7 +164,8 @@ async function fetchData(){
     }
     const v={}; for(let j=0;j<colNames.length;j++) v[colNames[j]]=parseNumber(cells[2+j]);
     const ml=metric.toLowerCase();
-    if(metric.includes('SLA')) data['SLA Breach%'][product]=v;
+    if(metric.includes('QC')) data['SLA QC%'][product]=v;
+    else if(metric.includes('SLA')) data['SLA Breach%'][product]=v;
     else if(metric.includes('Pendency')) data['Pendency'][product]=v;
     else if(metric.includes('P95')) data['P95 Delivery Time(Hrs)'][product]=v;
     else if(metric.includes('P99')) data['P99 Delivery Time(Hrs)'][product]=v;
@@ -198,6 +202,8 @@ function buildProducts(){
     const t=THEME[p];
     const sla=v('SLA Breach%',p,'MTD'), slaM1=v('SLA Breach%',p,'M-1');
     const se=v('SLA Breach%',p,'ENT'), sm=v('SLA Breach%',p,'MID'), ss=v('SLA Breach%',p,'SMB');
+    const slaqc=v('SLA QC%',p,'MTD'), slaqcM1=v('SLA QC%',p,'M-1');
+    const qe=v('SLA QC%',p,'ENT'), qm=v('SLA QC%',p,'MID'), qs=v('SLA QC%',p,'SMB');
     const pend=v('Pendency',p,'MTD'), pendM1=v('Pendency',p,'M-1');
     const p95=v('P95 Delivery Time(Hrs)',p,'MTD'), p95e=v('P95 Delivery Time(Hrs)',p,'ENT'), p95m=v('P95 Delivery Time(Hrs)',p,'MID'), p95s=v('P95 Delivery Time(Hrs)',p,'SMB');
     const p99=v('P99 Delivery Time(Hrs)',p,'MTD'), p99e=v('P99 Delivery Time(Hrs)',p,'ENT'), p99m=v('P99 Delivery Time(Hrs)',p,'MID'), p99s=v('P99 Delivery Time(Hrs)',p,'SMB');
@@ -206,6 +212,9 @@ function buildProducts(){
       kpi('SLA Breach', STATUS[slaTone(sla)], Math.round(sla), '%',
           'vs '+Math.round(slaM1)+'% last mo',
           'ENT '+Math.round(se)+'% · MID '+Math.round(sm)+'% · SMB '+Math.round(ss)+'%'),
+      kpi('SLA Breach QC', STATUS[slaTone(slaqc)], Math.round(slaqc), '%',
+          'vs '+Math.round(slaqcM1)+'% last mo',
+          'ENT '+Math.round(qe)+'% · MID '+Math.round(qm)+'% · SMB '+Math.round(qs)+'%'),
       kpi('Pendency', STATUS[cmpTone(pend,pendM1)], fmt(pend), '',
           'vs '+fmt(pendM1)+' last mo',
           'open items &gt; 6 hrs'),
